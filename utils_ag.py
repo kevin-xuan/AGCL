@@ -84,7 +84,7 @@ def Relation_dis(user_train, usernum, maxlen, dis_span):
     return data_train
 
 def timeSlice(time_set):
-    time_min = min(time_set)
+    time_min = min(time_set)  # 1090.0 
     time_map = dict()
     for time in time_set:
         time_map[time] = int(round(float(time-time_min)))
@@ -118,7 +118,7 @@ def cleanAndsort(User, time_map):
         time_list = list(map(lambda x: x[1], items))
         time_diff = set()
         for i in range(len(time_list)-1):
-            if time_list[i+1]-time_list[i] != 0:
+            if time_list[i+1]-time_list[i] != 0:  #* record the difference between consecutive items
                 time_diff.add(time_list[i+1]-time_list[i])
         if len(time_diff)==0:
             time_scale = 1
@@ -144,7 +144,7 @@ def data_partition(fname):
 
     user_count = defaultdict(int)
     item_count = defaultdict(int)
-    for line in f:
+    for line in f:  #* count user check-ins count and item count statistics for filtering unpopular users and items
         try:
             u, i, location, timestamp = line.rstrip().split('\t')
         except:
@@ -167,14 +167,14 @@ def data_partition(fname):
         if user_count[u]<5 or item_count[i]<5:
             continue
         time_set.add(timestamp)
-        User[u].append([i, timestamp,location])
+        User[u].append([i, timestamp, location])
     f.close()
     time_map = timeSlice(time_set)
     User, usernum, itemnum, timenum = cleanAndsort(User, time_map)
 
     for user in User:
         nfeedback = len(User[user])
-        if nfeedback < 3:
+        if nfeedback < 3:  #* useless condition?!
             user_train[user] = User[user]
             user_valid[user] = []
             user_test[user] = []
