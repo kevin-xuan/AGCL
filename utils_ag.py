@@ -246,7 +246,7 @@ def generate_vaild(dataset, args):
         all_vaild_dis_matrix.append(dis_matrix)
         all_labels.append(valid[u][0][0])
 
-    with open(f"{args.dataset}_{args.train_dir}" + '/vaild_instance.pkl','wb') as f:
+    with open(f"data/{args.dataset}_" + '_vaild_instance.pkl','wb') as f:
         pickle.dump(all_vaild_user, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_vaild_seq, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_vaild_time_matrix, f, pickle.HIGHEST_PROTOCOL)
@@ -258,7 +258,7 @@ def evaluate_vaild(model, dataset, args):
     vaild_user_num = 0.0
     HT = [0.0, 0.0, 0.0]
     try:
-        with open(f"{args.dataset}_{args.train_dir}" + "/vaild_instance.pkl", 'rb') as f:
+        with open(f"data/{args.dataset}_" + "vaild_instance.pkl", 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)
@@ -267,7 +267,7 @@ def evaluate_vaild(model, dataset, args):
     except:
         print('Preparing vaild instances')
         generate_vaild(dataset, args)
-        with open(f"{args.dataset}_{args.train_dir}" + "/vaild_instance.pkl", 'rb') as f:
+        with open(f"data/{args.dataset}_" + "vaild_instance.pkl", 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)
@@ -339,7 +339,7 @@ def generate_test(dataset,args):
         all_test_dis_matrix.append(dis_matrix)
         all_labels.append(test[u][0][0])
 
-    with open(f"{args.dataset}_" + 'test_instance.pkl','wb') as f:
+    with open(f"data/{args.dataset}_" + 'test_instance.pkl','wb') as f:
         pickle.dump(all_test_user, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_test_seq, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_test_time_matrix, f, pickle.HIGHEST_PROTOCOL)
@@ -351,7 +351,7 @@ def evaluate_test(model, dataset, args):
     test_user_num = 0.0
     HT = [0.0, 0.0, 0.0]
     try:
-        with open(f"{args.dataset}_{args.train_dir}" + "/test_instance.pkl", 'rb') as f:
+        with open(f"data/{args.dataset}_" + "test_instance.pkl", 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)
@@ -360,7 +360,7 @@ def evaluate_test(model, dataset, args):
     except:
         print('Preparing test instances')
         generate_test(dataset, args)
-        with open(f"{args.dataset}_{args.train_dir}" + "/test_instance.pkl", 'rb') as f:
+        with open(f"data/{args.dataset}_" + "test_instance.pkl", 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)

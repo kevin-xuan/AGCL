@@ -3,6 +3,7 @@ import copy
 import torch
 import random
 import pickle
+import os
 import numpy as np
 from math import radians, cos, sin, asin, sqrt
 from tqdm import tqdm
@@ -26,7 +27,7 @@ def haversine(lon1, lat1, lon2, lat2):
     r = 6371
     return c * r
 
-def computeRePos(time_seq, time_span):
+def compute_timeRePos(time_seq, time_span):
     
     size = time_seq.shape[0]
     time_matrix = np.zeros([size, size], dtype=np.int32)
@@ -39,7 +40,7 @@ def computeRePos(time_seq, time_span):
                 time_matrix[i][j] = span
     return time_matrix
 
-def Relation(user_train, usernum, maxlen, time_span):
+def Relation_tem(user_train, usernum, maxlen, time_span):
     data_train = dict()
     for user in tqdm(range(1, usernum+1), desc='Preparing relation matrix'):
         time_seq = np.zeros([maxlen], dtype=np.int32)
@@ -48,10 +49,10 @@ def Relation(user_train, usernum, maxlen, time_span):
             time_seq[idx] = i[1]
             idx -= 1
             if idx == -1: break
-        data_train[user] = computeRePos(time_seq, time_span)
+        data_train[user] = compute_timeRePos(time_seq, time_span)
     return data_train
 
-def computedisPos(dis_seq, dis_span):
+def compute_disPos(dis_seq, dis_span):
     dis_span = dis_span
     size = len(dis_seq)
     dis_matrix = np.zeros([size, size], dtype=np.float64)
@@ -79,7 +80,7 @@ def Relation_dis(user_train, usernum, maxlen, dis_span):
             dis_seq[idx] = i[2]
             idx -= 1
             if idx == -1: break
-        data_train[user] = computedisPos(dis_seq, dis_span)
+        data_train[user] = compute_disPos(dis_seq, dis_span)
     return data_train
 
 def timeSlice(time_set):
@@ -138,7 +139,7 @@ def data_partition(fname):
     user_test = {}
     
     print('Preparing data...')
-    f = open('data/%s.txt' % fname, 'r')
+    f = open('../data/%s.txt' % fname, 'r')
     time_set = set()
 
     user_count = defaultdict(int)
@@ -153,7 +154,7 @@ def data_partition(fname):
         user_count[u]+=1
         item_count[i]+=1
     f.close()
-    f = open('data/%s.txt' % fname, 'r')
+    f = open('../data/%s.txt' % fname, 'r')
 
     for line in f:
         try:
@@ -186,7 +187,7 @@ def data_partition(fname):
     print('Preparing done...')
     return [user_train, user_valid, user_test, usernum, itemnum, timenum]
 
-def mask_visit(prediction,visit_list):
+def mask_visit(prediction, visit_list):
     visit_list = list(visit_list)
     visit_list = torch.LongTensor(visit_list).to('cuda')
     mask_prediction = prediction[0].scatter(-1,visit_list,-2e10).to('cuda')
@@ -254,15 +255,15 @@ def generate_vaild(dataset,args):
             dis_seq[idx] = i[2]
             idx -= 1
             if idx == -1: break
-        time_matrix = computeRePos(time_seq, args.time_span)
-        dis_matrix = computedisPos(dis_seq,args.dis_span)
+        time_matrix = compute_timeRePos(time_seq, args.time_span)
+        dis_matrix = compute_disPos(dis_seq,args.dis_span)
         all_vaild_user.append(u)
         all_vaild_seq.append(seq)
         all_vaild_time_matrix.append(time_matrix)
         all_vaild_dis_matrix.append(dis_matrix)
         all_labels.append(valid[u][0][0])
 
-    with open('vaild_instance.pkl','wb') as f:
+    with open(f"../data/{args.dataset}_" + 'vaild_instance.pkl','wb') as f:
         pickle.dump(all_vaild_user, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_vaild_seq, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_vaild_time_matrix, f, pickle.HIGHEST_PROTOCOL)
@@ -274,7 +275,7 @@ def evaluate_vaild(model,dataset,args):
     vaild_user_num = 0.0
     HT = [0.0,0.0,0.0]
     try:
-        with open("vaild_instance.pkl", 'rb') as f:
+        with open(f"../data/{args.dataset}_" + "vaild_instance.pkl", 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)
@@ -283,7 +284,7 @@ def evaluate_vaild(model,dataset,args):
     except:
         print('Preparing vaild instances')
         generate_vaild(dataset,args)
-        with open("vaild_instance.pkl", 'rb') as f:
+        with open(f"../data/{args.dataset}_" + "vaild_instance.pkl", 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)
@@ -315,7 +316,7 @@ def evaluate_vaild(model,dataset,args):
                 NDCG[2] += 1 / np.log2(i + 2)
                 HT[2] += 1
 
-    return [x/test_user_num for x in NDCG], [x/test_user_num for x in HT]
+    return [x/vaild_user_num for x in NDCG], [x/vaild_user_num for x in HT]
 
 def generate_test(dataset,args):
     [train, valid, test, usernum, itemnum, timenum] = copy.deepcopy(dataset)
@@ -346,8 +347,8 @@ def generate_test(dataset,args):
             dis_seq[idx] = i[2]
             idx -= 1
             if idx == -1: break
-        time_matrix = computeRePos(time_seq, args.time_span)
-        dis_matrix = computedisPos(dis_seq,args.dis_span)
+        time_matrix = compute_timeRePos(time_seq, args.time_span)
+        dis_matrix = compute_disPos(dis_seq,args.dis_span)
         all_test_user.append(u)
         all_test_seq.append(seq)
         # all_test_time_seq.append(time_seq)
@@ -355,7 +356,7 @@ def generate_test(dataset,args):
         all_test_dis_matrix.append(dis_matrix)
         all_labels.append(test[u][0][0])
 
-    with open('test_instance.pkl','wb') as f:
+    with open(f"../data/{args.dataset}_" + 'test_instance.pkl','wb') as f:
         pickle.dump(all_test_user, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_test_seq, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_test_time_matrix, f, pickle.HIGHEST_PROTOCOL)
@@ -365,11 +366,11 @@ def generate_test(dataset,args):
 
 
 def evaluate_test(model,dataset,args):
-    NDCG = [0.0,0.0,0.0]
+    NDCG = [0.0, 0.0, 0.0]
     test_user_num = 0.0
     HT = [0.0,0.0,0.0]
     try:
-        with open("test_instance.pkl", 'rb') as f:
+        with open(f"../data/{args.dataset}_" + "_test_instance.pkl", 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)
@@ -377,8 +378,8 @@ def evaluate_test(model,dataset,args):
             all_labels = pickle.load(f)
     except:
         print('Preparing test instances')
-        generate_test(dataset,args)
-        with open("test_instance.pkl", 'rb') as f:
+        generate_test(dataset, args)
+        with open(f"../data/{args.dataset}_" + "test_instance.pkl", 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)

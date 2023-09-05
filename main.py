@@ -10,7 +10,7 @@ from model_ag import AGRAN
 from tqdm import tqdm
 from utils_ag import *
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+# os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 def str2bool(s):
     if s not in {'false', 'true'}:
         raise ValueError('Not a valid boolean string')
@@ -40,7 +40,7 @@ parser.add_argument('--num_epochs', default=121, type=int)
 parser.add_argument('--num_heads', default=2, type=int)
 parser.add_argument('--dropout_rate', default=0.3, type=float)
 parser.add_argument('--l2_emb', default=0.0001, type=float, help="L2 regularization")
-parser.add_argument('--device', default='cuda', type=str)
+parser.add_argument('--gpu', default=0, type=int)
 parser.add_argument('--inference_only', default=False, type=str2bool)
 parser.add_argument('--state_dict_path', default=None, type=str, help="model checkpoint")
 parser.add_argument('--time_span', default=256, type=int, help="maximal time interval threshold")
@@ -58,6 +58,7 @@ def mask(adj, epsilon=0, mask_value=-1e16):
     return update_adj
 
 if __name__ == '__main__':
+    args.device = torch.device("cuda:{}".format(args.gpu)) if torch.cuda.is_available() else torch.device("cpu")
     dataset = data_partition(args.dataset)
     [user_train, user_valid, user_test, usernum, itemnum, timenum] = dataset  # timenum: maximal scaled time slot among all users' check-ins
     num_batch = len(user_train) // args.batch_size  # 4368 // 128 = 36 #* how to deal with remaining part?
@@ -72,7 +73,8 @@ if __name__ == '__main__':
     print(itemnum)
     print(usernum)
 
-    f = open(os.path.join(args.dataset + '_' + args.train_dir, 'log.txt'), 'a')
+    timestring = time.strftime('%Y%m%d%H%M%S', time.localtime())
+    f = open(os.path.join(args.dataset + '_' + args.train_dir, f'log_{timestring}.txt'), 'w')
     f.write('\n'.join([str(k) + ':' + str(v) for k, v in sorted(vars(args).items(), key=lambda x: x[0])])+'\n')
     f.flush()
 
@@ -160,16 +162,22 @@ if __name__ == '__main__':
             T += t1
             print('Evaluating', end='\n')
             ### for validation ###
-            # NDCG, HR = evaluate_vaild(model, dataset, args)
+            NDCG, HR = evaluate_vaild(model, dataset, args)
+            print('\nValid epoch:%d, time: %f(s), NDCG_val (@2: %.4f, @5: %.4f, @10: %.4f), Recall_val (@2: %.4f, @5: %.4f, @10: %.4f)'
+                  % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
+            f.write('\nValid epoch:%d, time: %f(s), NDCG (@2: %.4f, @5: %.4f, @10: %.4f), Recall (@2: %.4f, @5: %.4f, @10: %.4f)'
+                  % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
+            
             ### for test ###
             NDCG,HR = evaluate_test(model, dataset, args)
-
-            print('epoch:%d, time: %f(s), NDCG (@2: %.4f, @5: %.4f, @10: %.4f), Recall (@2: %.4f, @5: %.4f, @10: %.4f)'
+            print('\nTest epoch:%d, time: %f(s), NDCG (@2: %.4f, @5: %.4f, @10: %.4f), Recall (@2: %.4f, @5: %.4f, @10: %.4f)'
                   % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
-
-            f.write('epoch:' + str(epoch) + ' ' + str(float('%.4f'%NDCG[2].item()))+ ' '+str(float('%.4f'%HR[2])) + '\n')
+            f.write('\nTest epoch:%d, time: %f(s), NDCG (@2: %.4f, @5: %.4f, @10: %.4f), Recall (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+                  % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
+            # f.write('\nepoch:' + str(epoch) + ' ' + str(float('%.4f'%NDCG[2].item()))+ ' '+str(float('%.4f'%HR[2])) + '\n')
             f.flush()
             t0 = time.time()
             model.train()
-
+    
+    f.close()
     print("Done")

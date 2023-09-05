@@ -1,2 +1,0 @@
-batch_size,128	dataset,four-sin	device,cuda	dis_span,256	dropout_rate,0.3	hidden_units,64	inference_only,False	kl_reg,1.0	l2_emb,0.0001	lr,0.001	maxlen,50	num_blocks,3	num_epochs,121	num_heads,2	state_dict_path,None	time_span,256	train_dir,default
-epoch:2 0.0818 0.1805

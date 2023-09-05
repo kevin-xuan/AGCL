@@ -116,7 +116,7 @@ class AGRAN_anchor(torch.nn.Module):
 
         self.last_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
 
-        for _ in range(args.num_blocks):
+        for _ in range(args.num_blocks):  # 2
             new_attn_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
             self.attention_layernorms.append(new_attn_layernorm)
 
@@ -134,12 +134,12 @@ class AGRAN_anchor(torch.nn.Module):
 
     def seq2feats(self, user_ids, log_seqs, time_matrices, dis_matrices, item_embs):
 
-        seqs = item_embs[torch.LongTensor(log_seqs).to(self.dev),:]
+        seqs = item_embs[torch.LongTensor(log_seqs).to(self.dev),:]  # (B, N, D)
         seqs *= item_embs.shape[1] ** 0.5
 
         seqs = self.item_emb_dropout(seqs)
 
-        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])
+        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])  # (B, N)
         positions = torch.LongTensor(positions).to(self.dev)
         abs_pos_K = self.abs_pos_K_emb(positions)
         abs_pos_V = self.abs_pos_V_emb(positions)
@@ -184,18 +184,18 @@ class AGRAN_anchor(torch.nn.Module):
 
         anchor_idx = anchor_idx.to(self.dev)
         self.anchor_idx = anchor_idx
-        item_embs,support = self.gcn(self.item_emb,anchor_idx)
+        item_embs, support = self.gcn(self.item_emb, anchor_idx)
 
-        log_feats = self.seq2feats(user_ids, log_seqs, time_matrices, dis_matrices, item_embs)
+        log_feats = self.seq2feats(user_ids, log_seqs, time_matrices, dis_matrices, item_embs)  # (B, N, D)
 
-        pos_embs = item_embs[torch.LongTensor(pos_seqs).to(self.dev),:]
-        neg_embs = item_embs[torch.LongTensor(neg_seqs).to(self.dev),:]
+        pos_embs = item_embs[torch.LongTensor(pos_seqs).to(self.dev),:]  # label
+        neg_embs = item_embs[torch.LongTensor(neg_seqs).to(self.dev),:]  # useless
 
         pos_logits = (log_feats * pos_embs).sum(dim=-1)
         neg_logits = (log_feats * neg_embs).sum(dim=-1)
 
         fin_logits = log_feats.matmul(item_embs.transpose(0,1))
-        fin_logits = fin_logits.reshape(-1,fin_logits.shape[-1])
+        fin_logits = fin_logits.reshape(-1,fin_logits.shape[-1])  # (B*N, N_all)
 
         return pos_logits, neg_logits,fin_logits, support
 
