@@ -32,26 +32,26 @@ parser.add_argument('--dataset', default='four-sin',type=str)
 parser.add_argument('--train_dir', default='default',type=str)
 parser.add_argument('--batch_size', default=64, type=int)
 parser.add_argument('--lr', default=0.001, type=float)
-parser.add_argument('--maxlen', default=50, type=int)
-parser.add_argument('--hidden_units', default=64, type=int)
-parser.add_argument('--num_blocks', default=2, type=int)
+parser.add_argument('--maxlen', default=50, type=int, help="use recent maxlen subsequence to train model")
+parser.add_argument('--hidden_units', default=64, type=int, help="embedding dimension")
+parser.add_argument('--num_blocks', default=2, type=int, help="number of transformer layer")
 parser.add_argument('--num_epochs', default=200, type=int)
 parser.add_argument('--num_heads', default=1, type=int)
 parser.add_argument('--dropout_rate', default=0.2, type=float)
-parser.add_argument('--l2_emb', default=0.001, type=float)
+parser.add_argument('--l2_emb', default=0.001, type=float, help="L2 regularization")
 parser.add_argument('--device', default='cuda', type=str)
 parser.add_argument('--inference_only', default=False, type=str2bool)
-parser.add_argument('--state_dict_path', default=None, type=str)
-parser.add_argument('--time_span', default=256, type=int)
-parser.add_argument('--dis_span', default=256, type=int)
+parser.add_argument('--state_dict_path', default=None, type=str, help="model checkpoint")
+parser.add_argument('--time_span', default=256, type=int, help="maximal time interval threshold")
+parser.add_argument('--dis_span', default=256, type=int, help="maximal distance interval threshold")
 parser.add_argument('--kl_reg', default=1.0, type=float)
 parser.add_argument('--anchor_num', default=500, type=int)
-parser.add_argument('--layer_num', default=3, type=int)
+parser.add_argument('--layer_num', default=3, type=int, help="number of GCN layers")
 
 args = parser.parse_args()
 if not os.path.isdir(args.dataset + '_' + args.train_dir):
     os.makedirs(args.dataset + '_' + args.train_dir)
-with open(os.path.join(args.dataset + '_' + args.train_dir, 'args.txt'), 'w') as f:
+with open(os.path.join(args.dataset + '_' + args.train_dir, 'log.txt'), 'w') as f:
     f.write('\n'.join([str(k) + ',' + str(v) for k, v in sorted(vars(args).items(), key=lambda x: x[0])]))
 f.close()
 
@@ -61,7 +61,7 @@ def mask(adj, epsilon=0, mask_value=-1e16):
     return update_adj
 
 if __name__ == '__main__':
-    tra_adj_matrix = sp.load_npz('sin_transaction_kl_notest.npz')
+    tra_adj_matrix = sp.load_npz('../data/sin_transaction_kl_notest.npz')
     tra_adj_matrix = tra_adj_matrix.todok()
 
     dataset = data_partition(args.dataset)
@@ -79,12 +79,12 @@ if __name__ == '__main__':
     f.flush()
 
     try:
-        relation_matrix = pickle.load(
-            open('data/relation_matrix_%s_%d_%d.pickle' % (args.dataset, args.maxlen, args.time_span), 'rb'))
+        time_relation_matrix = pickle.load(
+            open('data/relation_time_matrix_%s_%d_%d.pickle' % (args.dataset, args.maxlen, args.time_span), 'rb'))
     except:
-        relation_matrix = Relation(user_train, usernum, args.maxlen, args.time_span)
-        pickle.dump(relation_matrix,
-                    open('data/relation_matrix_%s_%d_%d.pickle' % (args.dataset, args.maxlen, args.time_span), 'wb'))
+        time_relation_matrix = Relation_tem(user_train, usernum, args.maxlen, args.time_span)
+        pickle.dump(time_relation_matrix,
+                    open('data/relation_time_matrix_%s_%d_%d.pickle' % (args.dataset, args.maxlen, args.time_span), 'wb'))
 
     try:
         dis_relation_matrix = pickle.load(
@@ -94,7 +94,7 @@ if __name__ == '__main__':
         pickle.dump(dis_relation_matrix,
                     open('data/relation_dis_matrix_%s_%d_%d.pickle'%(args.dataset, args.maxlen, args.dis_span),'wb'))
 
-    train_dataset = Traindataset(user_train, relation_matrix, dis_relation_matrix, itemnum, args.maxlen)
+    train_dataset = Traindataset(user_train, time_relation_matrix, dis_relation_matrix, itemnum, args.maxlen)
     dataloader = DataLoader(dataset=train_dataset,batch_size=args.batch_size,shuffle=True,num_workers=3)
     model = AGRAN_anchor(usernum, itemnum, itemnum, args).to(args.device)
 
