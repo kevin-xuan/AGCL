@@ -21,7 +21,7 @@ class AGCN(nn.Module):
         if bias:  # False
             self.bias = nn.Parameter(torch.zeros(output_dim))
 
-    def get_neighbor_hard_threshold(self,adj, epsilon=0, mask_value=0):
+    def get_neighbor_hard_threshold(self, adj, epsilon=0, mask_value=0):
 
         mask = (adj > epsilon).detach().float()
         raw_adj = adj * mask + (1 - mask) * mask_value
@@ -43,12 +43,12 @@ class AGCN(nn.Module):
         update_adj = update_adj.reshape(adj.size(0), adj.size(1))
         return update_adj
 
-    def cosine_matrix_div(self,emb):
+    def cosine_matrix_div(self, emb):
         node_norm = emb.div(torch.norm(emb, p=2, dim=-1, keepdim=True))
         cos_adj = torch.mm(node_norm, node_norm.transpose(-1, -2))
         return cos_adj
     
-    def weight_cosine_matrix_div(self,emb):
+    def weight_cosine_matrix_div(self, emb):
         emb = torch.matmul(emb, self.cos_weight)  # Equation (2)
         node_norm = F.normalize(emb, p=2, dim=-1)
         cos_adj = torch.mm(node_norm, node_norm.transpose(-1, -2))
@@ -62,7 +62,7 @@ class AGCN(nn.Module):
         x = inputs.weight[1:,:]  # (N, D)
         support = self.weight_cosine_matrix_div(x)  # (N, N) adaptive graph Equation (2)
         support, support_loss = self.get_neighbor_hard_threshold(support)  # graph sparsification Equation (7) and Equation (3)
-
+        
         if self.training:
             support = F.dropout(support, self.dropout)  # support_loss is unnormalized matrix, which will be used in Equation (11)
 

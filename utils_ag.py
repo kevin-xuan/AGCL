@@ -151,8 +151,8 @@ def data_partition(fname):
             u, i, timestamp = line.rstrip().split('\t')
         u = int(u)
         i = int(i)
-        user_count[u]+=1  # 1~4368
-        item_count[i]+=1  # 1~9731
+        user_count[u]+=1  # foursquare: 1~4368
+        item_count[i]+=1  # foursquare: 1~9731ß
     f.close()
     f = open('data/%s.txt' % fname, 'r')
 

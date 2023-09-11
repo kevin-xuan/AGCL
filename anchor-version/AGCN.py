@@ -1,7 +1,6 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-from utils_ag import sparse_dropout
 
 class AGCN_anchor(nn.Module):
     def __init__(self,input_dim,output_dim,

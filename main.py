@@ -161,12 +161,12 @@ if __name__ == '__main__':
             t1 = time.time() - t0
             T += t1
             print('Evaluating', end='\n')
-            ### for validation ###
-            NDCG, HR = evaluate_vaild(model, dataset, args)
-            print('\nValid epoch:%d, time: %f(s), NDCG_val (@2: %.4f, @5: %.4f, @10: %.4f), Recall_val (@2: %.4f, @5: %.4f, @10: %.4f)'
-                  % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
-            f.write('\nValid epoch:%d, time: %f(s), NDCG (@2: %.4f, @5: %.4f, @10: %.4f), Recall (@2: %.4f, @5: %.4f, @10: %.4f)'
-                  % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
+            # ### for validation ###
+            # NDCG, HR = evaluate_vaild(model, dataset, args)
+            # print('\nValid epoch:%d, time: %f(s), NDCG_val (@2: %.4f, @5: %.4f, @10: %.4f), Recall_val (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
+            # f.write('\nValid epoch:%d, time: %f(s), NDCG (@2: %.4f, @5: %.4f, @10: %.4f), Recall (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
             
             ### for test ###
             NDCG,HR = evaluate_test(model, dataset, args)

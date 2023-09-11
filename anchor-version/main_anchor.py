@@ -3,7 +3,6 @@ import time
 import torch
 import pickle
 import argparse
-import math
 import scipy.sparse as sp
 from dataset import Traindataset
 from torch.utils.data import DataLoader
@@ -28,7 +27,7 @@ def setup_seed(seed=42):
 setup_seed(42)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', default='four-sin',type=str)
+parser.add_argument('--dataset', default='four-sin',type=str)  # 'gowalla'  
 parser.add_argument('--train_dir', default='default',type=str)
 parser.add_argument('--batch_size', default=64, type=int)
 parser.add_argument('--lr', default=0.001, type=float)

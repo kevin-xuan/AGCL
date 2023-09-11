@@ -1,2 +1,3 @@
 data/*.pickle
 data/*.pkl
+data/*gowalla*.txt

@@ -9,7 +9,7 @@ def random_neq(l, r, s):
     return t
 
 class Traindataset(Dataset):
-    def __init__(self, user_train, time_matrix, dis_matirx, itemnum,maxlen):
+    def __init__(self, user_train, time_matrix, dis_matirx, itemnum, maxlen):
 
         self.user_train = user_train
         self.time_matrix = time_matrix
@@ -23,7 +23,7 @@ class Traindataset(Dataset):
         seq = np.zeros([self.max_len], dtype=np.int32)  #* loc_ids "zero" means padding
         time_seq = np.zeros([self.max_len], dtype=np.int32)  # time slots 
         pos = np.zeros([self.max_len], dtype=np.int32)  # labels
-        neg = np.zeros([self.max_len], dtype=np.int32)  # negatives
+        neg = np.zeros([self.max_len], dtype=np.int32)  # negatives but no use
         nxt = self.user_train[user_idx][-1][0] 
 
         idx = self.max_len - 1
@@ -39,7 +39,7 @@ class Traindataset(Dataset):
         user_time_matrix = self.time_matrix[user_idx]
         user_dis_matrix = self.dis_matrix[user_idx]
 
-        user_idx = torch.tensor(user_idx, dtype=torch.long)  #* user embedding is used?
+        user_idx = torch.tensor(user_idx, dtype=torch.long)  #* user embedding is used? no
         seq = torch.tensor(seq, dtype=torch.long)
         time_seq = torch.tensor(time_seq, dtype=torch.long)
         pos = torch.tensor(pos, dtype=torch.long)
