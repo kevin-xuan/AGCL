@@ -94,7 +94,7 @@ class AGRAN(torch.nn.Module):
         self.item_emb_dropout = torch.nn.Dropout(p=args.dropout_rate)  # 0.3 
 
 
-        self.gcn = AGCN(input_dim=args.hidden_units, output_dim=args.hidden_units, layer=4, dropout=args.dropout_rate)
+        self.gcn = AGCN(input_dim=args.hidden_units, output_dim=args.hidden_units, layer=args.layer_num, dropout=args.dropout_rate)  # default: layer=4
 
         self.abs_pos_K_emb = torch.nn.Embedding(args.maxlen, args.hidden_units)  # (50, D) position encoding
         self.abs_pos_V_emb = torch.nn.Embedding(args.maxlen, args.hidden_units)

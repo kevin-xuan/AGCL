@@ -1,9 +1,7 @@
 import sys
 import copy
 import torch
-import random
 import pickle
-import os
 import numpy as np
 from math import radians, cos, sin, asin, sqrt
 from tqdm import tqdm
@@ -263,19 +261,19 @@ def generate_vaild(dataset,args):
         all_vaild_dis_matrix.append(dis_matrix)
         all_labels.append(valid[u][0][0])
 
-    with open(f"../data/{args.dataset}_" + 'vaild_instance.pkl','wb') as f:
+    with open(f"../data/{args.dataset}_" + "%s_%s_valid_instance.pkl" % (args.time_span, args.dis_span),'wb') as f:
         pickle.dump(all_vaild_user, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_vaild_seq, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_vaild_time_matrix, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_vaild_dis_matrix, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_labels, f, pickle.HIGHEST_PROTOCOL)
 
-def evaluate_vaild(model,dataset,args):
+def evaluate_vaild(model, dataset, args, time_adj_matrix, dis_adj_matrix):
     NDCG = [0.0,0.0,0.0]
     vaild_user_num = 0.0
     HT = [0.0,0.0,0.0]
     try:
-        with open(f"../data/{args.dataset}_" + "vaild_instance.pkl", 'rb') as f:
+        with open(f"../data/{args.dataset}_" + "%s_%s_valid_instance.pkl" % (args.time_span, args.dis_span), 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)
@@ -283,8 +281,8 @@ def evaluate_vaild(model,dataset,args):
             all_labels = pickle.load(f)
     except:
         print('Preparing vaild instances')
-        generate_vaild(dataset,args)
-        with open(f"../data/{args.dataset}_" + "vaild_instance.pkl", 'rb') as f:
+        generate_vaild(dataset, args)
+        with open(f"../data/{args.dataset}_" + "%s_%s_valid_instance.pkl" % (args.time_span, args.dis_span), 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)
@@ -298,7 +296,7 @@ def evaluate_vaild(model,dataset,args):
         print('.', end='')
         sys.stdout.flush()
         u,seq,time_matrix,dis_matrix,label = instance
-        predictions,no_use = model.predict(u,seq,time_matrix,dis_matrix,[1])
+        predictions,no_use = model.predict(u,seq,time_matrix,dis_matrix,[1], time_adj_matrix, dis_adj_matrix)
         predictions = -predictions
         ranks = predictions.argsort().argsort().cpu()
         rank = []
@@ -356,7 +354,7 @@ def generate_test(dataset,args):
         all_test_dis_matrix.append(dis_matrix)
         all_labels.append(test[u][0][0])
 
-    with open(f"../data/{args.dataset}_" + 'test_instance.pkl','wb') as f:
+    with open(f"../data/{args.dataset}_" + "%s_%s_test_instance.pkl" % (args.time_span, args.dis_span),'wb') as f:
         pickle.dump(all_test_user, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_test_seq, f, pickle.HIGHEST_PROTOCOL)
         pickle.dump(all_test_time_matrix, f, pickle.HIGHEST_PROTOCOL)
@@ -365,12 +363,12 @@ def generate_test(dataset,args):
 
 
 
-def evaluate_test(model,dataset,args):
+def evaluate_test(model, dataset, args, time_adj_matrix, dis_adj_matrix):
     NDCG = [0.0, 0.0, 0.0]
     test_user_num = 0.0
     HT = [0.0,0.0,0.0]
     try:
-        with open(f"../data/{args.dataset}_" + "_test_instance.pkl", 'rb') as f:
+        with open(f"../data/{args.dataset}_" + "%s_%s_test_instance.pkl" % (args.time_span, args.dis_span), 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)
@@ -379,7 +377,7 @@ def evaluate_test(model,dataset,args):
     except:
         print('Preparing test instances')
         generate_test(dataset, args)
-        with open(f"../data/{args.dataset}_" + "test_instance.pkl", 'rb') as f:
+        with open(f"../data/{args.dataset}_" + "%s_%s_test_instance.pkl" % (args.time_span, args.dis_span), 'rb') as f:
             all_u = pickle.load(f)
             all_seqs = pickle.load(f)
             all_time_matrix = pickle.load(f)
@@ -393,7 +391,7 @@ def evaluate_test(model,dataset,args):
         print('.', end='')
         sys.stdout.flush()
         u,seq,time_matrix,dis_matrix,label = instance
-        predictions,no_use = model.predict(u,seq,time_matrix,dis_matrix,[1])
+        predictions,no_use = model.predict(u,seq,time_matrix,dis_matrix,[1], time_adj_matrix, dis_adj_matrix)
         predictions = -predictions
         ranks = predictions.argsort().argsort().cpu()
         rank = []

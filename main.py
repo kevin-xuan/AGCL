@@ -46,6 +46,8 @@ parser.add_argument('--state_dict_path', default=None, type=str, help="model che
 parser.add_argument('--time_span', default=256, type=int, help="maximal time interval threshold")
 parser.add_argument('--dis_span', default=256, type=int, help="maximal distance interval threshold")
 parser.add_argument('--kl_reg', default=1.0, type=float)
+parser.add_argument('--layer_num', default=4, type=int, help="number of GCN layers")
+parser.add_argument('--valid_epoch', default=2, type=int, help="every n epoch to test")
 
 args = parser.parse_args()
 if not os.path.isdir(args.dataset + '_' + args.train_dir):
@@ -63,7 +65,8 @@ if __name__ == '__main__':
     [user_train, user_valid, user_test, usernum, itemnum, timenum] = dataset  # timenum: maximal scaled time slot among all users' check-ins
     num_batch = len(user_train) // args.batch_size  # 4368 // 128 = 36 #* how to deal with remaining part?
 
-    tra_adj_matrix = sp.load_npz('data/sin_transaction_kl_notest.npz')  # N x N, frequency-based transition graph
+    # tra_adj_matrix = sp.load_npz('data/sin_transaction_kl_notest.npz')  # N x N, frequency-based transition graph
+    tra_adj_matrix = sp.load_npz('data/%s_transaction_kl_notest.npz' % args.dataset)  # csr_matrix
     prior = torch.FloatTensor(tra_adj_matrix.todense()).to(args.device)  # Equation (11)
 
     cc = 0.0
@@ -156,25 +159,24 @@ if __name__ == '__main__':
             loss.backward()
             adam_optimizer.step()
 
-        if  epoch % 2 == 0:
+        if  epoch % args.valid_epoch == 0:
             model.eval()
             t1 = time.time() - t0
             T += t1
             print('Evaluating', end='\n')
-            # ### for validation ###
-            # NDCG, HR = evaluate_vaild(model, dataset, args)
-            # print('\nValid epoch:%d, time: %f(s), NDCG_val (@2: %.4f, @5: %.4f, @10: %.4f), Recall_val (@2: %.4f, @5: %.4f, @10: %.4f)'
-            #       % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
-            # f.write('\nValid epoch:%d, time: %f(s), NDCG (@2: %.4f, @5: %.4f, @10: %.4f), Recall (@2: %.4f, @5: %.4f, @10: %.4f)'
-            #       % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
+            ### for validation ###
+            NDCG, HR = evaluate_vaild(model, dataset, args)
+            print('\nValid epoch:%d, time: %f(s), Recall_val (@2: %.4f, @5: %.4f, @10: %.4f), NDCG_val (@2: %.4f, @5: %.4f, @10: %.4f)'
+                  % (epoch, T, HR[0], HR[1], HR[2], NDCG[0], NDCG[1], NDCG[2]))
+            f.write('\nValid epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+                  % (epoch, T, HR[0], HR[1], HR[2], NDCG[0], NDCG[1], NDCG[2]))
             
             ### for test ###
             NDCG,HR = evaluate_test(model, dataset, args)
-            print('\nTest epoch:%d, time: %f(s), NDCG (@2: %.4f, @5: %.4f, @10: %.4f), Recall (@2: %.4f, @5: %.4f, @10: %.4f)'
-                  % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
-            f.write('\nTest epoch:%d, time: %f(s), NDCG (@2: %.4f, @5: %.4f, @10: %.4f), Recall (@2: %.4f, @5: %.4f, @10: %.4f)\n'
-                  % (epoch, T, NDCG[0], NDCG[1], NDCG[2], HR[0], HR[1], HR[2]))
-            # f.write('\nepoch:' + str(epoch) + ' ' + str(float('%.4f'%NDCG[2].item()))+ ' '+str(float('%.4f'%HR[2])) + '\n')
+            print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+                  % (epoch, T, HR[0], HR[1], HR[2], NDCG[0], NDCG[1], NDCG[2]))
+            f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+                  % (epoch, T, HR[0], HR[1], HR[2], NDCG[0], NDCG[1], NDCG[2]))
             f.flush()
             t0 = time.time()
             model.train()
