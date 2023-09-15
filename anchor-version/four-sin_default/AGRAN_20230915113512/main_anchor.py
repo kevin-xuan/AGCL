@@ -27,11 +27,11 @@ def select_anchor(kmeans, index, item_embs):
     anchor_idx = torch.from_numpy(I).squeeze(-1)
     return anchor_idx
 
-def sort_by_importance(mx):
+def sort_by_importance(mx, anchor_num):
     '''Column-wise sum'''
     colsum = -np.array(mx.sum(0))  # (N, )
     index = np.argsort(colsum)
-    return index  # (r, )
+    return index[:anchor_num]  # (r, )
 
 def setup_seed(seed=42):
     os.environ['PYTHONHASHSEED'] = str(seed)
@@ -183,11 +183,8 @@ if __name__ == '__main__':
     T = 0.0
     t0 = time.time()
     anchor_num = args.anchor_num  # r = 500
-    # delta = 0.02 # 1.0
     # anchor_idx = None
-    # indices = sort_by_importance(interaction_matrix.A)
-    # static_anchor_idx = indices[:int(round(anchor_num * delta))]
-    # sample_range = set(range(itemnum)).difference(set(static_anchor_idx.tolist()))
+    # anchor_idx = sort_by_importance(interaction_matrix.A, anchor_num)
     
     # f.write('\nTrainable parameter list:')
     param_count = count_params(model)
@@ -200,7 +197,7 @@ if __name__ == '__main__':
     # dis_graph = sparse_matrix_to_tensor(calculate_random_walk_matrix((dis_graph * lambda_dis + I).astype(np.float32))).to(args.device)
     spatial_bias = torch.zeros(itemnum+1, itemnum+1)   # (N_all, N_all)
     spatial_bias[1:, 1:] = torch.tensor(dis_adj_matrix.A)
-    diag = torch.eye(itemnum+1, dtype=torch.float32)  
+    diag = torch.eye(itemnum+1, dtype=torch.float32) * 0.9  
     spatial_bias = spatial_bias + diag  # POI与本身的空间距离关系可以设置为一个超参数,这里先用1
     spatial_bias[0, 0] = 0.
     #* user_preference
@@ -208,18 +205,11 @@ if __name__ == '__main__':
     user_bias[1:, 1:] = torch.tensor(interaction_matrix.A)
 
     for epoch in range(epoch_start_idx, args.num_epochs + 1):
+        # if anchor_idx is None:  # initial anchor
+        #     anchor_idx = torch.randperm(itemnum)[:anchor_num] # (r, ) 
         anchor_idx = torch.randperm(itemnum)[:anchor_num] # (r, )
-        
-        # dynamic_anchor_idx = np.random.choice(np.array(list(sample_range)), anchor_num - len(static_anchor_idx), replace=False)
-        # anchor_idx = np.concatenate([static_anchor_idx, dynamic_anchor_idx], axis=0)
-        
-        anchor_idx_set = set(anchor_idx.tolist()) if type(anchor_idx) is np.ndarray else set(anchor_idx.numpy().tolist())
-        
+        anchor_idx_set = set(anchor_idx.numpy().tolist())
         anchor_idx_tem = np.random.choice(np.array(list(set(range(itemnum)).difference(anchor_idx_set))), anchor_num, replace=False)
-        
-        # dynamic_anchor_idx_tem = np.random.choice(np.array(list(sample_range.difference(anchor_idx_set))), anchor_num - len(static_anchor_idx), replace=False)
-        # anchor_idx_tem = np.concatenate([static_anchor_idx, dynamic_anchor_idx_tem], axis=0)
-        
         
         tra_adj_matrix_anchor = tra_adj_matrix[anchor_idx,:].todense() if type(anchor_idx) is np.ndarray else tra_adj_matrix[anchor_idx.numpy(), :].todense() # (r, N)
         tra_prior = torch.FloatTensor(tra_adj_matrix_anchor).to(args.device)

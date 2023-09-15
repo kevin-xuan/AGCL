@@ -183,11 +183,11 @@ if __name__ == '__main__':
     T = 0.0
     t0 = time.time()
     anchor_num = args.anchor_num  # r = 500
-    # delta = 0.02 # 1.0
+    delta = 0.02 # 1.0
     # anchor_idx = None
-    # indices = sort_by_importance(interaction_matrix.A)
-    # static_anchor_idx = indices[:int(round(anchor_num * delta))]
-    # sample_range = set(range(itemnum)).difference(set(static_anchor_idx.tolist()))
+    indices = sort_by_importance(interaction_matrix.A)
+    static_anchor_idx = indices[:int(round(anchor_num * delta))]
+    sample_range = set(range(itemnum)).difference(set(static_anchor_idx.tolist()))
     
     # f.write('\nTrainable parameter list:')
     param_count = count_params(model)
@@ -208,17 +208,17 @@ if __name__ == '__main__':
     user_bias[1:, 1:] = torch.tensor(interaction_matrix.A)
 
     for epoch in range(epoch_start_idx, args.num_epochs + 1):
-        anchor_idx = torch.randperm(itemnum)[:anchor_num] # (r, )
+        # anchor_idx = torch.randperm(itemnum)[:anchor_num] # (r, )
         
-        # dynamic_anchor_idx = np.random.choice(np.array(list(sample_range)), anchor_num - len(static_anchor_idx), replace=False)
-        # anchor_idx = np.concatenate([static_anchor_idx, dynamic_anchor_idx], axis=0)
+        dynamic_anchor_idx = np.random.choice(np.array(list(sample_range)), anchor_num - len(static_anchor_idx), replace=False)
+        anchor_idx = np.concatenate([static_anchor_idx, dynamic_anchor_idx], axis=0)
         
         anchor_idx_set = set(anchor_idx.tolist()) if type(anchor_idx) is np.ndarray else set(anchor_idx.numpy().tolist())
         
-        anchor_idx_tem = np.random.choice(np.array(list(set(range(itemnum)).difference(anchor_idx_set))), anchor_num, replace=False)
+        # anchor_idx_tem = np.random.choice(np.array(list(set(range(itemnum)).difference(anchor_idx_set))), anchor_num, replace=False)
         
-        # dynamic_anchor_idx_tem = np.random.choice(np.array(list(sample_range.difference(anchor_idx_set))), anchor_num - len(static_anchor_idx), replace=False)
-        # anchor_idx_tem = np.concatenate([static_anchor_idx, dynamic_anchor_idx_tem], axis=0)
+        dynamic_anchor_idx_tem = np.random.choice(np.array(list(sample_range.difference(anchor_idx_set))), anchor_num - len(static_anchor_idx), replace=False)
+        anchor_idx_tem = np.concatenate([static_anchor_idx, dynamic_anchor_idx_tem], axis=0)
         
         
         tra_adj_matrix_anchor = tra_adj_matrix[anchor_idx,:].todense() if type(anchor_idx) is np.ndarray else tra_adj_matrix[anchor_idx.numpy(), :].todense() # (r, N)

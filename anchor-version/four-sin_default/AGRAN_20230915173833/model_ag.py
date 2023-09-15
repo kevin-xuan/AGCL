@@ -233,7 +233,7 @@ class AGRAN_anchor(torch.nn.Module):
         # contra_loss = torch.sum((sim_score1 - diag) ** 2) + torch.sum((sim_score2 - diag) ** 2)
         on_diag_intra = torch.diagonal(sim_score).add_(-1).pow_(2).sum()
         off_diag_intra = off_diagonal(sim_score).pow_(2).sum()
-        contra_loss = on_diag_intra + 1e-3 * off_diag_intra
+        contra_loss = on_diag_intra + 1e-2 * off_diag_intra
         
         #* fusion
         item_embs_score, item_embs_tem_score = self.project(item_embs), self.project(item_embs_tem)  # (N, 1)

@@ -6,12 +6,6 @@ import torch.nn.functional as F
 
 FLOAT_MIN = -sys.float_info.max
 
-def off_diagonal(x):
-    # return a flattened view of the off-diagonal elements of a square matrix
-    n, m = x.shape
-    assert n == m
-    return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
-
 class PointWiseFeedForward(torch.nn.Module):
     def __init__(self, hidden_units, dropout_rate):
 
@@ -220,21 +214,17 @@ class AGRAN_anchor(torch.nn.Module):
         random_non_anchor_idx = torch.from_numpy(random_non_anchor_idx).to(self.dev)  # (N', )
         
         non_item_embs, non_tem_item_embs = item_embs[random_non_anchor_idx, :], item_embs_tem[random_non_anchor_idx, :]  # (N', D)
-        # sim_score = torch.exp(F.cosine_similarity(non_item_embs.unsqueeze(1), non_tem_item_embs.unsqueeze(0), dim=-1) / self.temp)  # (N', N')
-        # diag = torch.eye(non_item_embs.shape[0], dtype=torch.float32).to(self.dev)  # (N', N')
-        # pos_score = torch.sum(sim_score * diag, dim=-1)  # (N', )
-        # neg_score = torch.sum(sim_score, dim=-1)
-        # ratio = (pos_score + 1e-12) / neg_score
-        # contra_loss = torch.mean(-torch.log(ratio))
+        sim_score = torch.exp(F.cosine_similarity(non_item_embs.unsqueeze(1), non_tem_item_embs.unsqueeze(0), dim=-1) / self.temp)  # (N', N')
+        diag = torch.eye(non_item_embs.shape[0], dtype=torch.float32).to(self.dev)  # (N', N')
+        pos_score = torch.sum(sim_score * diag, dim=-1)  # (N', )
+        neg_score = torch.sum(sim_score, dim=-1)
+        ratio = (pos_score + 1e-12) / neg_score
+        contra_loss = torch.mean(-torch.log(ratio))
         
-        sim_score = non_item_embs.T @ non_tem_item_embs  # (D, D)
+        # diag = torch.eye(non_item_embs.shape[1], dtype=torch.float32).to(self.dev)  # (D, D)
         # sim_score1 = F.cosine_similarity(non_item_embs.transpose(0, 1).unsqueeze(1), tem_item_embs.transpose(0, 1).unsqueeze(0), dim=-1)  # (D, D) 
         # sim_score2 = F.cosine_similarity(non_item_embs.transpose(0, 1).unsqueeze(1), dis_item_embs.transpose(0, 1).unsqueeze(0), dim=-1)
         # contra_loss = torch.sum((sim_score1 - diag) ** 2) + torch.sum((sim_score2 - diag) ** 2)
-        on_diag_intra = torch.diagonal(sim_score).add_(-1).pow_(2).sum()
-        off_diag_intra = off_diagonal(sim_score).pow_(2).sum()
-        contra_loss = on_diag_intra + 1e-3 * off_diag_intra
-        
         #* fusion
         item_embs_score, item_embs_tem_score = self.project(item_embs), self.project(item_embs_tem)  # (N, 1)
         adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score], dim=-1)), dim=-1)
