@@ -363,7 +363,7 @@ def generate_test(dataset,args):
 
 
 
-def evaluate_test(model, dataset, args, time_adj_matrix, dis_adj_matrix, interaction_matrix):
+def evaluate_test(model, dataset, args, time_adj_matrix, dis_adj_matrix, spatial_bias, interaction_matrix):
     NDCG = [0.0, 0.0, 0.0]
     test_user_num = 0.0
     HT = [0.0,0.0,0.0]
@@ -391,7 +391,7 @@ def evaluate_test(model, dataset, args, time_adj_matrix, dis_adj_matrix, interac
         print('.', end='')
         sys.stdout.flush()
         u,seq,time_matrix,dis_matrix,label = instance
-        predictions,no_use = model.predict(u,seq,time_matrix,dis_matrix,[1], time_adj_matrix, dis_adj_matrix, interaction_matrix)
+        predictions, no_use = model.predict(u,seq,time_matrix,dis_matrix,[1], time_adj_matrix, dis_adj_matrix, spatial_bias, interaction_matrix)
         predictions = -predictions
         ranks = predictions.argsort().argsort().cpu()
         rank = []

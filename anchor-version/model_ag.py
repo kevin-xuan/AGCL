@@ -136,7 +136,11 @@ class AGRAN_anchor(torch.nn.Module):
             torch.nn.Linear(args.hidden_units, args.hidden_units),
             torch.nn.Linear(args.hidden_units, 1)
         )
-        self.temp = 1.
+        # self.temp = 1.
+        # self.user_project = torch.nn.Sequential(
+        #     torch.nn.Linear(2 * args.hidden_units, args.hidden_units),
+        #     torch.nn.Linear(args.hidden_units, args.hidden_units)
+        # )
 
         for _ in range(args.num_blocks):  # 2
             new_attn_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
@@ -154,16 +158,10 @@ class AGRAN_anchor(torch.nn.Module):
             new_fwd_layer = PointWiseFeedForward(args.hidden_units, args.dropout_rate)
             self.forward_layers.append(new_fwd_layer)
     
-    def seq2feats(self, user_ids, log_seqs, time_matrices, dis_matrices, item_embs, interaction_matrix):
+    def seq2feats(self, user_ids, log_seqs, time_matrices, dis_matrices, item_embs, interaction_matrix, user_bias):
 
         seqs = item_embs[torch.LongTensor(log_seqs).to(self.dev),:]  # (B, N, D)
         seqs = self.item_emb_dropout(seqs)
-        # #* user preference
-        # user_preference = interaction_matrix.matmul(item_embs)  # (M, D)self.item_emb.weight
-        # user_bias = user_preference[torch.LongTensor(user_ids), :].unsqueeze(1).to(self.dev)  # (B, 1, D)
-        # # user_bias = user_bias.expand_as(seqs)
-        # # user_bias = torch.exp(-(torch.abs(user_bias - seqs)))  # (B, N, D)
-        # user_bias = torch.exp(-torch.norm(user_bias - seqs, p=2, dim=-1)).unsqueeze(-1)  # (B, N, 1)
 
         positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])  # (B, N)
         positions = torch.LongTensor(positions).to(self.dev)
@@ -206,13 +204,15 @@ class AGRAN_anchor(torch.nn.Module):
 
         return log_feats
 
-    def forward(self, user_ids, log_seqs, time_matrices, dis_matrices, pos_seqs, neg_seqs, anchor_idx, anchor_idx_tem, time_adj_matrix=None, dis_adj_matrix=None, interaction_matrix=None):
+    def forward(self, user_ids, log_seqs, time_matrices, dis_matrices, pos_seqs, neg_seqs, anchor_idx, anchor_idx_tem, anchor_idx_dis, time_adj_matrix=None, dis_adj_matrix=None, spatial_bias=None, interaction_matrix=None):
 
         anchor_idx = anchor_idx.to(self.dev)
         self.anchor_idx = anchor_idx
         anchor_idx_tem = anchor_idx_tem.to(self.dev)
         self.anchor_idx_tem = anchor_idx_tem
-        item_embs, item_embs_tem, support, support_tem = self.gcn(self.item_emb, anchor_idx, anchor_idx_tem, time_adj_matrix, dis_adj_matrix)
+        anchor_idx_dis = anchor_idx_dis.to(self.dev)
+        self.anchor_idx_dis = anchor_idx_dis
+        item_embs, item_embs_tem, item_embs_dis, support, support_tem, support_dis = self.gcn(self.item_emb, anchor_idx, anchor_idx_tem, anchor_idx_dis, time_adj_matrix, dis_adj_matrix)
         
         #* contrastive learning
         non_anchor_idx = set(range(1, item_embs.shape[0])).difference(set(anchor_idx.cpu().numpy().tolist()).union(set(anchor_idx_tem.cpu().numpy().tolist())))
@@ -236,18 +236,16 @@ class AGRAN_anchor(torch.nn.Module):
         contra_loss = on_diag_intra + 1e-3 * off_diag_intra
         
         #* fusion
-        item_embs_score, item_embs_tem_score = self.project(item_embs), self.project(item_embs_tem)  # (N, 1)
-        adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score], dim=-1)), dim=-1)
-        item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem], dim=1), dim=1)
+        item_embs_score, item_embs_tem_score, item_embs_dis_score = self.project(item_embs), self.project(item_embs_tem), self.project(item_embs_dis)  # (N, 1)
+        adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score, item_embs_dis_score], dim=-1)), dim=-1)
+        item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem, item_embs_dis], dim=1), dim=1)
         
         #* user preference
         user_preference = interaction_matrix.matmul(item_embs)  # (M, D)self.item_emb.weight
         user_bias = user_preference[torch.LongTensor(user_ids), :].unsqueeze(1).to(self.dev)  # (B, 1, D)
-        # user_bias = user_bias.expand_as(seqs)
-        # user_bias = torch.exp(-(torch.abs(user_bias - seqs)))  # (B, N, D)
         user_bias = torch.exp(-torch.norm(user_bias - item_embs.unsqueeze(0), p=2, dim=-1)).unsqueeze(1)  # (B, 1, N_all)
         
-        log_feats = self.seq2feats(user_ids, log_seqs, time_matrices, dis_matrices, item_embs, interaction_matrix)  # (B, N, D)
+        log_feats = self.seq2feats(user_ids, log_seqs, time_matrices, dis_matrices, item_embs, interaction_matrix, user_bias)  # (B, N, D)
         pos_embs = item_embs[torch.LongTensor(pos_seqs).to(self.dev),:]  # label
         neg_embs = item_embs[torch.LongTensor(neg_seqs).to(self.dev),:]  # useless
 
@@ -256,25 +254,34 @@ class AGRAN_anchor(torch.nn.Module):
 
         fin_logits = log_feats.matmul(item_embs.transpose(0,1))
         #* spatial_preference
-        bias = dis_adj_matrix[torch.LongTensor(log_seqs), :].to(self.dev)  # (B, N, N_all)
+        bias = spatial_bias[torch.LongTensor(log_seqs), :].to(self.dev)  # (B, N, N_all)
         fin_logits = fin_logits + bias
-        # fin_logits = fin_logits +  + user_bias
+        # fin_logits = fin_logits + user_bias  #* user bias
         fin_logits = fin_logits.reshape(-1,fin_logits.shape[-1])  # (B*N, N_all)
         
-        return self.item_emb.weight, pos_logits, neg_logits, fin_logits, support, support_tem, contra_loss
+        return self.item_emb.weight, pos_logits, neg_logits, fin_logits, support, support_tem, support_dis, contra_loss
 
-    def predict(self, user_ids, log_seqs, time_matrices, dis_matrices, item_indices, time_adj_matrix=None, dis_adj_matrix=None, interaction_matrix=None):
-        item_embs, item_embs_tem, support, support_tem = self.gcn(self.item_emb, self.anchor_idx, self.anchor_idx_tem, time_adj_matrix, dis_adj_matrix)
+    def predict(self, user_ids, log_seqs, time_matrices, dis_matrices, item_indices, time_adj_matrix=None, dis_adj_matrix=None, spatial_bias=None, interaction_matrix=None):
+        item_embs, item_embs_tem, item_embs_dis, support, support_tem, support_dis = self.gcn(self.item_emb, self.anchor_idx, self.anchor_idx_tem, self.anchor_idx_dis, time_adj_matrix, dis_adj_matrix)
+        # #* fusion
+        # item_embs_score, item_embs_tem_score = self.project(item_embs), self.project(item_embs_tem)  # (N, 1)
+        # adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score], dim=-1)), dim=-1)
+        # item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem], dim=1), dim=1)
         #* fusion
-        item_embs_score, item_embs_tem_score = self.project(item_embs), self.project(item_embs_tem)  # (N, 1)
-        adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score], dim=-1)), dim=-1)
-        item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem], dim=1), dim=1)
+        item_embs_score, item_embs_tem_score, item_embs_dis_score = self.project(item_embs), self.project(item_embs_tem), self.project(item_embs_dis)  # (N, 1)
+        adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score, item_embs_dis_score], dim=-1)), dim=-1)
+        item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem, item_embs_dis], dim=1), dim=1)
+        #* user preference
+        user_preference = interaction_matrix.matmul(item_embs)  # (M, D)self.item_emb.weight
+        user_bias = user_preference[torch.LongTensor(user_ids), :].unsqueeze(1).to(self.dev)  # (B, 1, D)
+        user_bias = torch.exp(-torch.norm(user_bias - item_embs.unsqueeze(0), p=2, dim=-1))  # (B, N_all)
         
-        log_feats = self.seq2feats(user_ids, log_seqs, time_matrices, dis_matrices, item_embs, interaction_matrix)
+        log_feats = self.seq2feats(user_ids, log_seqs, time_matrices, dis_matrices, item_embs, interaction_matrix, user_bias)
         final_feat = log_feats[:, -1, :]
         logits = final_feat.matmul(item_embs.transpose(0,1))
         #* spatial_preference
-        bias = dis_adj_matrix[torch.LongTensor(log_seqs), :].to(self.dev)  # (B, N, N_all)
+        bias = spatial_bias[torch.LongTensor(log_seqs), :].to(self.dev)  # (B, N, N_all)
         logits = logits + bias[:, -1, :]
+        # logits = logits + user_bias
         
         return logits, item_indices

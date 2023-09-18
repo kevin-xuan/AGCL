@@ -167,7 +167,7 @@ def get_parser():
     parser.add_argument("--loc_count", default=68879, type=int, help="number of POI")  # gowalla: 106994 foursquare: 68879
     parser.add_argument("--L1_flag", default=True, type=bool, help="whether to use L1 or L2 norm")
     parser.add_argument("--loc_graph", default=True, type=bool, help="whether to construct POI or user graph")
-    parser.add_argument("--loc_spatial", default=False, type=bool, help="whether to construct temporal or spatial POI graph")
+    parser.add_argument("--loc_spatial", type=eval, choices=[True, False], default='False', help="whether to construct temporal or spatial POI graph")
     args = parser.parse_args()
     return args
 

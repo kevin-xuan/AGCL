@@ -40,6 +40,9 @@ def setup_seed(seed=42):
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
+    # torch.backends.cudnn.deterministic = True  # 确定性固定
+    # torch.backends.cudnn.benchmark = True  # False会确定性地选择算法，会降低性能
+    # torch.backends.cudnn.enabled = True   # 增加运行效率，默认就是True
 
 setup_seed(42)
 
@@ -51,7 +54,7 @@ parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--maxlen', default=50, type=int, help="use recent maxlen subsequence to train model")
 parser.add_argument('--hidden_units', default=64, type=int, help="embedding dimension")
 parser.add_argument('--num_blocks', default=2, type=int, help="number of transformer layer")
-parser.add_argument('--num_epochs', default=70, type=int)  # 200
+parser.add_argument('--num_epochs', default=50, type=int)  # 200  70
 parser.add_argument('--num_heads', default=1, type=int)
 parser.add_argument('--dropout_rate', default=0.2, type=float)
 parser.add_argument('--l2_emb', default=0.001, type=float, help="L2 regularization")
@@ -64,7 +67,7 @@ parser.add_argument('--anchor_num', default=500, type=int)
 parser.add_argument('--layer_num', default=3, type=int, help="number of GCN layers")
 
 parser.add_argument('--tra_kl_reg', default=1.0, type=float)
-parser.add_argument('--dis_kl_reg', default=0.0, type=float)
+parser.add_argument('--dis_kl_reg', default=1.0, type=float)  # 0.0
 parser.add_argument('--time_kl_reg', default=1.0, type=float)
 parser.add_argument('--contra_reg', default=1.0, type=float)
 parser.add_argument('--tra_delta', default=0., type=float)
@@ -214,24 +217,27 @@ if __name__ == '__main__':
         # anchor_idx = np.concatenate([static_anchor_idx, dynamic_anchor_idx], axis=0)
         
         anchor_idx_set = set(anchor_idx.tolist()) if type(anchor_idx) is np.ndarray else set(anchor_idx.numpy().tolist())
-        
         anchor_idx_tem = np.random.choice(np.array(list(set(range(itemnum)).difference(anchor_idx_set))), anchor_num, replace=False)
-        
+        anchor_idx_tem_set = set(anchor_idx_tem.tolist()) if type(anchor_idx_tem) is np.ndarray else set(anchor_idx_tem.numpy().tolist())
+        anchor_idx_dis = np.random.choice(np.array(list(set(range(itemnum)).difference(anchor_idx_set.union(anchor_idx_tem_set)))), anchor_num, replace=False)
+        # anchor_idx_dis = anchor_idx.clone()
+        # anchor_idx_tem = anchor_idx.clone()  #* same anchor_idx as anchor_idx
         # dynamic_anchor_idx_tem = np.random.choice(np.array(list(sample_range.difference(anchor_idx_set))), anchor_num - len(static_anchor_idx), replace=False)
         # anchor_idx_tem = np.concatenate([static_anchor_idx, dynamic_anchor_idx_tem], axis=0)
         
-        
         tra_adj_matrix_anchor = tra_adj_matrix[anchor_idx,:].todense() if type(anchor_idx) is np.ndarray else tra_adj_matrix[anchor_idx.numpy(), :].todense() # (r, N)
         tra_prior = torch.FloatTensor(tra_adj_matrix_anchor).to(args.device)
-        dis_adj_matrix_anchor = dis_adj_matrix[anchor_idx,:].todense() if type(anchor_idx) is np.ndarray else dis_adj_matrix[anchor_idx.numpy(), :].todense() # (r, N)
+        dis_adj_matrix_anchor = dis_adj_matrix[anchor_idx_dis,:].todense() if type(anchor_idx_dis) is np.ndarray else dis_adj_matrix[anchor_idx_dis.numpy(), :].todense() # (r, N)
         dis_prior = torch.FloatTensor(dis_adj_matrix_anchor).to(args.device)
         time_adj_matrix_anchor = time_adj_matrix[anchor_idx_tem,:].todense() if type(anchor_idx_tem) is np.ndarray else time_adj_matrix[anchor_idx_tem.numpy(), :].todense() # (r, N)
         time_prior = torch.FloatTensor(time_adj_matrix_anchor).to(args.device)
         
         anchor_idx += 1  # loc_id starts from 1
         anchor_idx_tem += 1
+        anchor_idx_dis += 1
         anchor_idx = torch.from_numpy(anchor_idx) if type(anchor_idx) is np.ndarray else anchor_idx
         anchor_idx_tem = torch.from_numpy(anchor_idx_tem) if type(anchor_idx_tem) is np.ndarray else anchor_idx_tem
+        anchor_idx_dis = torch.from_numpy(anchor_idx_dis) if type(anchor_idx_dis) is np.ndarray else anchor_idx_dis
         if args.inference_only: break
         # #* clustering at each epoch   
         # index = faiss.IndexFlatL2(args.hidden_units)
@@ -240,10 +246,10 @@ if __name__ == '__main__':
         contra_losses = []
         for step, instance in tqdm(enumerate(dataloader), total=num_batch, ncols=70, leave=False, unit='b'):
             u, seq, time_seq, pos, neg, time_matrix, dis_matrix = instance
-            item_embs, pos_logits, neg_logits, fin_logits, support, support_tem, contra_loss = model(u, seq, time_matrix, dis_matrix, pos, neg, anchor_idx, anchor_idx_tem, time_adj_matrix, spatial_bias, user_bias)
+            item_embs, pos_logits, neg_logits, fin_logits, support, support_tem, support_dis, contra_loss = model(u, seq, time_matrix, dis_matrix, pos, neg, anchor_idx, anchor_idx_tem, anchor_idx_dis, time_adj_matrix, dis_adj_matrix, spatial_bias, user_bias)
             tra_regular = kl_loss(torch.log(torch.softmax(mask(support.transpose(1,0)),dim=-1)+1e-9),torch.softmax(mask(tra_prior),dim=-1))
-            # dis_regular = kl_loss(torch.log(torch.softmax(mask(support.transpose(1,0)),dim=-1)+1e-9),torch.softmax(mask(dis_prior),dim=-1))
             time_regular = kl_loss(torch.log(torch.softmax(mask(support_tem.transpose(1,0)),dim=-1)+1e-9),torch.softmax(mask(time_prior),dim=-1))
+            dis_regular = kl_loss(torch.log(torch.softmax(mask(support_dis.transpose(1,0)),dim=-1)+1e-9),torch.softmax(mask(dis_prior),dim=-1))
     
             adam_optimizer.zero_grad()
             pos_label_for_crosse = pos.numpy().reshape(-1)
@@ -254,17 +260,18 @@ if __name__ == '__main__':
             loss = ce_criterion(fin_logits[indices_for_crosse], pos_label_cross.long())
             rec_losses.append(loss.item())
             tra_kl_losses.append(tra_regular.item())
-            # dis_kl_losses.append(dis_regular.item())
             time_kl_losses.append(time_regular.item())
+            dis_kl_losses.append(dis_regular.item())
             contra_losses.append(contra_loss.item())
             loss += args.tra_kl_reg * tra_regular + args.time_kl_reg * time_regular #+ args.dis_kl_reg * dis_regular 
+            loss += args.dis_kl_reg * dis_regular
             # loss += args.contra_reg * contra_loss
             loss.backward()
             adam_optimizer.step()
-        print('\nTrain epoch:%d, time: %f(s), rec_loss: %.4f, tra_kl_loss: %.4f, time_kl_loss: %.4f, contra_loss: %.4f'#, dis_kl_loss: %.4f'
-                % (epoch, T, np.array(rec_losses).mean(), np.array(tra_kl_losses).mean(), np.array(time_kl_losses).mean(), np.array(contra_losses).mean())) # , np.array(dis_kl_losses).mean()
-        f.write('\nTrain epoch:%d, time: %f(s), rec_loss: %.4f, tra_kl_loss: %.4f, time_kl_loss: %.4f, contra_loss: %.4f'#, dis_kl_loss: %.4f
-                  % (epoch, T, np.array(rec_losses).mean(), np.array(tra_kl_losses).mean(), np.array(time_kl_losses).mean(), np.array(contra_losses).mean())) # , np.array(dis_kl_losses).mean()
+        print('\nTrain epoch:%d, time: %f(s), rec_loss: %.4f, tra_kl_loss: %.4f, time_kl_loss: %.4f, dis_kl_loss: %.4f, contra_loss: %.4f'
+                % (epoch, T, np.array(rec_losses).mean(), np.array(tra_kl_losses).mean(), np.array(time_kl_losses).mean(), np.array(dis_kl_losses).mean(), np.array(contra_losses).mean())) 
+        f.write('\nTrain epoch:%d, time: %f(s), rec_loss: %.4f, tra_kl_loss: %.4f, time_kl_loss: %.4f, dis_kl_loss: %.4f, contra_loss: %.4f'
+                  % (epoch, T, np.array(rec_losses).mean(), np.array(tra_kl_losses).mean(), np.array(time_kl_losses).mean(), np.array(dis_kl_losses).mean(), np.array(contra_losses).mean())) 
         
         # anchor_idx = select_anchor(kmeans, index, item_embs)
         if epoch % args.valid_epoch == 0:
@@ -280,7 +287,7 @@ if __name__ == '__main__':
             #       % (epoch, T, HR[0], HR[1], HR[2], NDCG[0], NDCG[1], NDCG[2]))
             
             ### for test ###
-            NDCG, HR = evaluate_test(model, dataset, args, time_adj_matrix, spatial_bias, user_bias)
+            NDCG, HR = evaluate_test(model, dataset, args, time_adj_matrix, dis_adj_matrix, spatial_bias, user_bias)
             print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
                   % (epoch, T, HR[0], HR[1], HR[2], NDCG[0], NDCG[1], NDCG[2]))
             f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'

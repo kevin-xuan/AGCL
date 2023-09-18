@@ -1,0 +1,177 @@
+dataset:four-sin
+train_dir:default
+batch_size:64
+lr:0.001
+maxlen:50
+hidden_units:64
+num_blocks:2
+num_epochs:50
+num_heads:1
+dropout_rate:0.2
+l2_emb:0.001
+gpu:0
+inference_only:False
+state_dict_path:None
+time_span:128
+dis_span:256
+anchor_num:500
+layer_num:3
+tra_kl_reg:1.0
+dis_kl_reg:1.0
+time_kl_reg:1.0
+contra_reg:1.0
+tra_delta:0.0
+tem_delta:0.0
+dis_delta:0.0
+valid_epoch:1
+device:cuda:0
+In total: 737601 trainable parameters.
+Train epoch:1, time: 0.000000(s), rec_loss: 8.0955, tra_kl_loss: 6.5981, time_kl_loss: 6.0761, dis_kl_loss: 6.0533, contra_loss: 15468.8874
+Test epoch:1, time: 11.101161(s), Recall (@2: 0.1097, @5: 0.1628, @10: 0.2201), NDCG (@2: 0.0965, @5: 0.1201, @10: 0.1385)
+
+Train epoch:2, time: 11.101161(s), rec_loss: 7.3536, tra_kl_loss: 7.1500, time_kl_loss: 5.7609, dis_kl_loss: 5.7861, contra_loss: 27288.5327
+Test epoch:2, time: 21.662406(s), Recall (@2: 0.1130, @5: 0.1975, @10: 0.2555), NDCG (@2: 0.0999, @5: 0.1375, @10: 0.1564)
+
+Train epoch:3, time: 21.662406(s), rec_loss: 6.8463, tra_kl_loss: 6.8169, time_kl_loss: 5.0717, dis_kl_loss: 5.1164, contra_loss: 28499.8190
+Test epoch:3, time: 32.382182(s), Recall (@2: 0.1123, @5: 0.1852, @10: 0.2628), NDCG (@2: 0.0976, @5: 0.1301, @10: 0.1549)
+
+Train epoch:4, time: 32.382182(s), rec_loss: 6.4748, tra_kl_loss: 6.5174, time_kl_loss: 4.9322, dis_kl_loss: 4.9279, contra_loss: 26935.4229
+Test epoch:4, time: 43.611203(s), Recall (@2: 0.1251, @5: 0.2061, @10: 0.2799), NDCG (@2: 0.1081, @5: 0.1445, @10: 0.1682)
+
+Train epoch:5, time: 43.611203(s), rec_loss: 6.1972, tra_kl_loss: 6.4367, time_kl_loss: 4.8289, dis_kl_loss: 4.8354, contra_loss: 25435.3663
+Test epoch:5, time: 54.875217(s), Recall (@2: 0.1242, @5: 0.2076, @10: 0.2747), NDCG (@2: 0.1070, @5: 0.1445, @10: 0.1663)
+
+Train epoch:6, time: 54.875217(s), rec_loss: 5.9834, tra_kl_loss: 6.3321, time_kl_loss: 4.8006, dis_kl_loss: 4.7948, contra_loss: 23489.9101
+Test epoch:6, time: 66.443873(s), Recall (@2: 0.1326, @5: 0.2214, @10: 0.2975), NDCG (@2: 0.1136, @5: 0.1535, @10: 0.1780)
+
+Train epoch:7, time: 66.443873(s), rec_loss: 5.8003, tra_kl_loss: 6.3506, time_kl_loss: 4.7758, dis_kl_loss: 4.8044, contra_loss: 22474.6672
+Test epoch:7, time: 78.237333(s), Recall (@2: 0.1356, @5: 0.2201, @10: 0.2984), NDCG (@2: 0.1161, @5: 0.1541, @10: 0.1794)
+
+Train epoch:8, time: 78.237333(s), rec_loss: 5.6567, tra_kl_loss: 6.3771, time_kl_loss: 4.7691, dis_kl_loss: 4.7897, contra_loss: 20767.8067
+Test epoch:8, time: 90.933186(s), Recall (@2: 0.1432, @5: 0.2313, @10: 0.3070), NDCG (@2: 0.1222, @5: 0.1617, @10: 0.1860)
+
+Train epoch:9, time: 90.933186(s), rec_loss: 5.5443, tra_kl_loss: 6.3137, time_kl_loss: 4.7464, dis_kl_loss: 4.7450, contra_loss: 19726.5457
+Test epoch:9, time: 103.417661(s), Recall (@2: 0.1417, @5: 0.2281, @10: 0.2991), NDCG (@2: 0.1210, @5: 0.1598, @10: 0.1826)
+
+Train epoch:10, time: 103.417661(s), rec_loss: 5.4403, tra_kl_loss: 6.2704, time_kl_loss: 4.7478, dis_kl_loss: 4.7187, contra_loss: 17958.6579
+Test epoch:10, time: 116.165010(s), Recall (@2: 0.1451, @5: 0.2305, @10: 0.2995), NDCG (@2: 0.1237, @5: 0.1619, @10: 0.1842)
+
+Train epoch:11, time: 116.165010(s), rec_loss: 5.3656, tra_kl_loss: 6.3395, time_kl_loss: 4.7420, dis_kl_loss: 4.6864, contra_loss: 17349.7668
+Test epoch:11, time: 128.974572(s), Recall (@2: 0.1505, @5: 0.2402, @10: 0.3090), NDCG (@2: 0.1280, @5: 0.1679, @10: 0.1901)
+
+Train epoch:12, time: 128.974572(s), rec_loss: 5.3017, tra_kl_loss: 6.2989, time_kl_loss: 4.7032, dis_kl_loss: 4.7168, contra_loss: 16225.0071
+Test epoch:12, time: 141.999874(s), Recall (@2: 0.1481, @5: 0.2367, @10: 0.3068), NDCG (@2: 0.1275, @5: 0.1672, @10: 0.1897)
+
+Train epoch:13, time: 141.999874(s), rec_loss: 5.2476, tra_kl_loss: 6.3102, time_kl_loss: 4.7033, dis_kl_loss: 4.6807, contra_loss: 15574.9531
+Test epoch:13, time: 155.002707(s), Recall (@2: 0.1544, @5: 0.2462, @10: 0.3178), NDCG (@2: 0.1319, @5: 0.1732, @10: 0.1963)
+
+Train epoch:14, time: 155.002707(s), rec_loss: 5.2018, tra_kl_loss: 6.2446, time_kl_loss: 4.6894, dis_kl_loss: 4.6970, contra_loss: 15110.0569
+Test epoch:14, time: 168.205183(s), Recall (@2: 0.1477, @5: 0.2367, @10: 0.3066), NDCG (@2: 0.1273, @5: 0.1676, @10: 0.1903)
+
+Train epoch:15, time: 168.205183(s), rec_loss: 5.1555, tra_kl_loss: 6.2689, time_kl_loss: 4.6880, dis_kl_loss: 4.6805, contra_loss: 14474.0094
+Test epoch:15, time: 181.507376(s), Recall (@2: 0.1440, @5: 0.2365, @10: 0.3012), NDCG (@2: 0.1252, @5: 0.1669, @10: 0.1879)
+
+Train epoch:16, time: 181.507376(s), rec_loss: 5.1223, tra_kl_loss: 6.2552, time_kl_loss: 4.6686, dis_kl_loss: 4.6878, contra_loss: 13741.7639
+Test epoch:16, time: 194.746577(s), Recall (@2: 0.1520, @5: 0.2391, @10: 0.3116), NDCG (@2: 0.1306, @5: 0.1696, @10: 0.1931)
+
+Train epoch:17, time: 194.746577(s), rec_loss: 5.0837, tra_kl_loss: 6.2423, time_kl_loss: 4.6754, dis_kl_loss: 4.6826, contra_loss: 13071.5357
+Test epoch:17, time: 207.938022(s), Recall (@2: 0.1557, @5: 0.2484, @10: 0.3193), NDCG (@2: 0.1337, @5: 0.1754, @10: 0.1981)
+
+Train epoch:18, time: 207.938022(s), rec_loss: 5.0584, tra_kl_loss: 6.3020, time_kl_loss: 4.7008, dis_kl_loss: 4.7007, contra_loss: 12705.8158
+Test epoch:18, time: 221.380746(s), Recall (@2: 0.1529, @5: 0.2406, @10: 0.3122), NDCG (@2: 0.1336, @5: 0.1732, @10: 0.1962)
+
+Train epoch:19, time: 221.380746(s), rec_loss: 5.0306, tra_kl_loss: 6.1552, time_kl_loss: 4.5855, dis_kl_loss: 4.6480, contra_loss: 11876.6036
+Test epoch:19, time: 234.161780(s), Recall (@2: 0.1546, @5: 0.2462, @10: 0.3165), NDCG (@2: 0.1337, @5: 0.1750, @10: 0.1978)
+
+Train epoch:20, time: 234.161780(s), rec_loss: 5.0129, tra_kl_loss: 6.2550, time_kl_loss: 4.6749, dis_kl_loss: 4.6715, contra_loss: 11461.0401
+Test epoch:20, time: 247.374659(s), Recall (@2: 0.1516, @5: 0.2359, @10: 0.3064), NDCG (@2: 0.1320, @5: 0.1698, @10: 0.1927)
+
+Train epoch:21, time: 247.374659(s), rec_loss: 4.9800, tra_kl_loss: 6.2971, time_kl_loss: 4.6687, dis_kl_loss: 4.6425, contra_loss: 11082.8439
+Test epoch:21, time: 260.382885(s), Recall (@2: 0.1557, @5: 0.2419, @10: 0.3146), NDCG (@2: 0.1367, @5: 0.1756, @10: 0.1992)
+
+Train epoch:22, time: 260.382885(s), rec_loss: 4.9583, tra_kl_loss: 6.2635, time_kl_loss: 4.6484, dis_kl_loss: 4.6415, contra_loss: 10316.1083
+Test epoch:22, time: 273.488858(s), Recall (@2: 0.1598, @5: 0.2480, @10: 0.3234), NDCG (@2: 0.1386, @5: 0.1782, @10: 0.2027)
+
+Train epoch:23, time: 273.488858(s), rec_loss: 4.9490, tra_kl_loss: 6.2952, time_kl_loss: 4.6669, dis_kl_loss: 4.6784, contra_loss: 10575.6573
+Test epoch:23, time: 286.554266(s), Recall (@2: 0.1516, @5: 0.2411, @10: 0.3105), NDCG (@2: 0.1314, @5: 0.1714, @10: 0.1938)
+
+Train epoch:24, time: 286.554266(s), rec_loss: 4.9220, tra_kl_loss: 6.2322, time_kl_loss: 4.6263, dis_kl_loss: 4.6558, contra_loss: 9891.2966
+Test epoch:24, time: 299.420347(s), Recall (@2: 0.1600, @5: 0.2456, @10: 0.3169), NDCG (@2: 0.1389, @5: 0.1774, @10: 0.2005)
+
+Train epoch:25, time: 299.420347(s), rec_loss: 4.9070, tra_kl_loss: 6.3550, time_kl_loss: 4.6565, dis_kl_loss: 4.6626, contra_loss: 9905.8215
+Test epoch:25, time: 312.310982(s), Recall (@2: 0.1570, @5: 0.2473, @10: 0.3150), NDCG (@2: 0.1367, @5: 0.1772, @10: 0.1991)
+
+Train epoch:26, time: 312.310982(s), rec_loss: 4.8963, tra_kl_loss: 6.2331, time_kl_loss: 4.6543, dis_kl_loss: 4.6571, contra_loss: 9417.9678
+Test epoch:26, time: 325.188247(s), Recall (@2: 0.1432, @5: 0.2283, @10: 0.3027), NDCG (@2: 0.1245, @5: 0.1628, @10: 0.1870)
+
+Train epoch:27, time: 325.188247(s), rec_loss: 4.8802, tra_kl_loss: 6.2500, time_kl_loss: 4.5999, dis_kl_loss: 4.6345, contra_loss: 8895.1509
+Test epoch:27, time: 338.026309(s), Recall (@2: 0.1705, @5: 0.2574, @10: 0.3361), NDCG (@2: 0.1462, @5: 0.1852, @10: 0.2107)
+
+Train epoch:28, time: 338.026309(s), rec_loss: 4.8686, tra_kl_loss: 6.2690, time_kl_loss: 4.6489, dis_kl_loss: 4.6658, contra_loss: 8593.1530
+Test epoch:28, time: 350.964242(s), Recall (@2: 0.1531, @5: 0.2324, @10: 0.3006), NDCG (@2: 0.1323, @5: 0.1679, @10: 0.1900)
+
+Train epoch:29, time: 350.964242(s), rec_loss: 4.8489, tra_kl_loss: 6.2191, time_kl_loss: 4.6585, dis_kl_loss: 4.6709, contra_loss: 8446.0864
+Test epoch:29, time: 363.811805(s), Recall (@2: 0.1570, @5: 0.2469, @10: 0.3165), NDCG (@2: 0.1374, @5: 0.1778, @10: 0.2003)
+
+Train epoch:30, time: 363.811805(s), rec_loss: 4.8365, tra_kl_loss: 6.2571, time_kl_loss: 4.6671, dis_kl_loss: 4.6235, contra_loss: 8318.5061
+Test epoch:30, time: 376.420711(s), Recall (@2: 0.1628, @5: 0.2443, @10: 0.3204), NDCG (@2: 0.1419, @5: 0.1789, @10: 0.2035)
+
+Train epoch:31, time: 376.420711(s), rec_loss: 4.8261, tra_kl_loss: 6.2229, time_kl_loss: 4.6284, dis_kl_loss: 4.6541, contra_loss: 8193.7092
+Test epoch:31, time: 389.420663(s), Recall (@2: 0.1602, @5: 0.2415, @10: 0.3064), NDCG (@2: 0.1392, @5: 0.1755, @10: 0.1963)
+
+Train epoch:32, time: 389.420663(s), rec_loss: 4.8170, tra_kl_loss: 6.2437, time_kl_loss: 4.6366, dis_kl_loss: 4.6579, contra_loss: 7973.3984
+Test epoch:32, time: 402.491308(s), Recall (@2: 0.1548, @5: 0.2413, @10: 0.3167), NDCG (@2: 0.1360, @5: 0.1748, @10: 0.1991)
+
+Train epoch:33, time: 402.491308(s), rec_loss: 4.8081, tra_kl_loss: 6.3044, time_kl_loss: 4.6474, dis_kl_loss: 4.6544, contra_loss: 7829.9026
+Test epoch:33, time: 415.322699(s), Recall (@2: 0.1520, @5: 0.2344, @10: 0.3055), NDCG (@2: 0.1325, @5: 0.1696, @10: 0.1925)
+
+Train epoch:34, time: 415.322699(s), rec_loss: 4.7966, tra_kl_loss: 6.1917, time_kl_loss: 4.6623, dis_kl_loss: 4.6223, contra_loss: 7421.5222
+Test epoch:34, time: 428.046499(s), Recall (@2: 0.1546, @5: 0.2361, @10: 0.3038), NDCG (@2: 0.1348, @5: 0.1714, @10: 0.1933)
+
+Train epoch:35, time: 428.046499(s), rec_loss: 4.7836, tra_kl_loss: 6.2281, time_kl_loss: 4.5956, dis_kl_loss: 4.6285, contra_loss: 7065.7303
+Test epoch:35, time: 440.844198(s), Recall (@2: 0.1596, @5: 0.2484, @10: 0.3187), NDCG (@2: 0.1390, @5: 0.1792, @10: 0.2017)
+
+Train epoch:36, time: 440.844198(s), rec_loss: 4.7761, tra_kl_loss: 6.2386, time_kl_loss: 4.6125, dis_kl_loss: 4.6629, contra_loss: 7210.4491
+Test epoch:36, time: 453.903287(s), Recall (@2: 0.1520, @5: 0.2370, @10: 0.3047), NDCG (@2: 0.1330, @5: 0.1713, @10: 0.1931)
+
+Train epoch:37, time: 453.903287(s), rec_loss: 4.7623, tra_kl_loss: 6.0940, time_kl_loss: 4.6140, dis_kl_loss: 4.6081, contra_loss: 6594.9622
+Test epoch:37, time: 466.722194(s), Recall (@2: 0.1514, @5: 0.2335, @10: 0.3070), NDCG (@2: 0.1324, @5: 0.1697, @10: 0.1935)
+
+Train epoch:38, time: 466.722194(s), rec_loss: 4.7610, tra_kl_loss: 6.2921, time_kl_loss: 4.6581, dis_kl_loss: 4.6261, contra_loss: 6764.9276
+Test epoch:38, time: 479.475748(s), Recall (@2: 0.1539, @5: 0.2339, @10: 0.3066), NDCG (@2: 0.1347, @5: 0.1705, @10: 0.1941)
+
+Train epoch:39, time: 479.475748(s), rec_loss: 4.7421, tra_kl_loss: 6.2632, time_kl_loss: 4.6386, dis_kl_loss: 4.6747, contra_loss: 6462.9443
+Test epoch:39, time: 492.156262(s), Recall (@2: 0.1514, @5: 0.2367, @10: 0.3062), NDCG (@2: 0.1327, @5: 0.1711, @10: 0.1936)
+
+Train epoch:40, time: 492.156262(s), rec_loss: 4.7348, tra_kl_loss: 6.2527, time_kl_loss: 4.6600, dis_kl_loss: 4.6667, contra_loss: 6325.5072
+Test epoch:40, time: 505.108408(s), Recall (@2: 0.1436, @5: 0.2232, @10: 0.2915), NDCG (@2: 0.1260, @5: 0.1615, @10: 0.1835)
+
+Train epoch:41, time: 505.108408(s), rec_loss: 4.7302, tra_kl_loss: 6.2037, time_kl_loss: 4.6065, dis_kl_loss: 4.6545, contra_loss: 6381.6588
+Test epoch:41, time: 517.733734(s), Recall (@2: 0.1585, @5: 0.2421, @10: 0.3092), NDCG (@2: 0.1390, @5: 0.1767, @10: 0.1982)
+
+Train epoch:42, time: 517.733734(s), rec_loss: 4.7263, tra_kl_loss: 6.3141, time_kl_loss: 4.6496, dis_kl_loss: 4.6494, contra_loss: 6373.0648
+Test epoch:42, time: 530.455643(s), Recall (@2: 0.1501, @5: 0.2324, @10: 0.3038), NDCG (@2: 0.1322, @5: 0.1696, @10: 0.1927)
+
+Train epoch:43, time: 530.455643(s), rec_loss: 4.7116, tra_kl_loss: 6.2684, time_kl_loss: 4.7157, dis_kl_loss: 4.6520, contra_loss: 6200.5423
+Test epoch:43, time: 543.215222(s), Recall (@2: 0.1514, @5: 0.2318, @10: 0.2997), NDCG (@2: 0.1329, @5: 0.1691, @10: 0.1910)
+
+Train epoch:44, time: 543.215222(s), rec_loss: 4.7072, tra_kl_loss: 6.2804, time_kl_loss: 4.6484, dis_kl_loss: 4.6778, contra_loss: 6130.2708
+Test epoch:44, time: 555.863483(s), Recall (@2: 0.1557, @5: 0.2363, @10: 0.3049), NDCG (@2: 0.1358, @5: 0.1723, @10: 0.1943)
+
+Train epoch:45, time: 555.863483(s), rec_loss: 4.7033, tra_kl_loss: 6.2223, time_kl_loss: 4.6295, dis_kl_loss: 4.6212, contra_loss: 6149.0982
+Test epoch:45, time: 568.967438(s), Recall (@2: 0.1494, @5: 0.2324, @10: 0.3047), NDCG (@2: 0.1315, @5: 0.1688, @10: 0.1920)
+
+Train epoch:46, time: 568.967438(s), rec_loss: 4.6912, tra_kl_loss: 6.1221, time_kl_loss: 4.6409, dis_kl_loss: 4.6713, contra_loss: 6023.8748
+Test epoch:46, time: 582.412792(s), Recall (@2: 0.1524, @5: 0.2363, @10: 0.3053), NDCG (@2: 0.1338, @5: 0.1713, @10: 0.1934)
+
+Train epoch:47, time: 582.412792(s), rec_loss: 4.6867, tra_kl_loss: 6.2254, time_kl_loss: 4.6577, dis_kl_loss: 4.6844, contra_loss: 5943.9799
+Test epoch:47, time: 595.977431(s), Recall (@2: 0.1563, @5: 0.2365, @10: 0.3064), NDCG (@2: 0.1372, @5: 0.1728, @10: 0.1954)
+
+Train epoch:48, time: 595.977431(s), rec_loss: 4.6770, tra_kl_loss: 6.3141, time_kl_loss: 4.6408, dis_kl_loss: 4.6703, contra_loss: 6041.1720
+Test epoch:48, time: 610.081125(s), Recall (@2: 0.1598, @5: 0.2348, @10: 0.3038), NDCG (@2: 0.1399, @5: 0.1733, @10: 0.1955)
+
+Train epoch:49, time: 610.081125(s), rec_loss: 4.6714, tra_kl_loss: 6.2275, time_kl_loss: 4.7103, dis_kl_loss: 4.6218, contra_loss: 5887.5393
+Test epoch:49, time: 623.226075(s), Recall (@2: 0.1570, @5: 0.2359, @10: 0.3081), NDCG (@2: 0.1379, @5: 0.1733, @10: 0.1965)
+
+Train epoch:50, time: 623.226075(s), rec_loss: 4.6637, tra_kl_loss: 6.2075, time_kl_loss: 4.6612, dis_kl_loss: 4.6475, contra_loss: 6018.3514
+Test epoch:50, time: 636.686565(s), Recall (@2: 0.1531, @5: 0.2320, @10: 0.2988), NDCG (@2: 0.1352, @5: 0.1703, @10: 0.1918)

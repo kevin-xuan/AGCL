@@ -21,7 +21,7 @@ class AGCN_anchor(nn.Module):
         self.output_dim = output_dim
         self.cos_weight_tra = nn.Linear(input_dim, output_dim)
         self.cos_weight_tem = nn.Linear(input_dim, output_dim)
-        # self.cos_weight_dis = nn.Linear(input_dim, output_dim)
+        self.cos_weight_dis = nn.Linear(input_dim, output_dim)
         
         # self.lambda_tem = 1.0
         # self.lambda_dis = 1.0
@@ -33,9 +33,9 @@ class AGCN_anchor(nn.Module):
         elif type == 'tem':
             emb = self.cos_weight_tem(emb)
             anchor = self.cos_weight_tem(anchor)
-        # elif type == 'dis':
-        #     emb = self.cos_weight_dis(emb)
-        #     anchor = self.cos_weight_dis(anchor)
+        elif type == 'dis':
+            emb = self.cos_weight_dis(emb)
+            anchor = self.cos_weight_dis(anchor)
         else:
             raise NotImplementedError
         
@@ -81,25 +81,26 @@ class AGCN_anchor(nn.Module):
         output = torch.sum(x_fin, dim=1)  # (N, D)
         return output
     
-    def forward(self, inputs, anchor_idx, anchor_idx_tem, time_adj_matrix=None, dis_adj_matrix=None):
+    def forward(self, inputs, anchor_idx, anchor_idx_tem, anchor_idx_dis, time_adj_matrix=None, dis_adj_matrix=None):
         x = inputs.weight[1:,:]  # (N, D)
         anchor = inputs(anchor_idx)  # (r, D)
         anchor_tem = inputs(anchor_idx_tem)  # (r, D)
+        anchor_dis = inputs(anchor_idx_dis)  # (r, D)
         anchor_adj_tra = self.cosine_matrix_div(x, anchor, type='tra')
         anchor_adj_tem = self.cosine_matrix_div(x, anchor_tem, type='tem')
-        # anchor_adj_dis = self.cosine_matrix_div(x, anchor, type='dis')
+        anchor_adj_dis = self.cosine_matrix_div(x, anchor_dis, type='dis')
         anchor_adj_tra = self.get_neighbor_hard_threshold(anchor_adj_tra, epsilon=self.tra_delta)  # (N, r)
         anchor_adj_tem = self.get_neighbor_hard_threshold(anchor_adj_tem, epsilon=self.tem_delta)  # (N, r)
-        # anchor_adj_dis = self.get_neighbor_hard_threshold(anchor_adj_dis, epsilon=self.dis_delta)  # (N, r)
+        anchor_adj_dis = self.get_neighbor_hard_threshold(anchor_adj_dis, epsilon=self.dis_delta)  # (N, r)
 
         output_tra = self.gcn(x, anchor_adj_tra)
         output_tem = self.gcn(x, anchor_adj_tem)
-        # output_dis = self.gcn(x, anchor_adj_dis)
+        output_dis = self.gcn(x, anchor_adj_dis)
         mp_tra = torch.cat([inputs.weight[0, :].unsqueeze(dim=0), output_tra], dim=0)
         mp_tem = torch.cat([inputs.weight[0, :].unsqueeze(dim=0), output_tem], dim=0)
-        # mp_dis = torch.cat([inputs.weight[0, :].unsqueeze(dim=0), output_dis], dim=0)
+        mp_dis = torch.cat([inputs.weight[0, :].unsqueeze(dim=0), output_dis], dim=0)
         
-        return mp_tra, mp_tem, anchor_adj_tra, anchor_adj_tem
+        return mp_tra, mp_tem, mp_dis, anchor_adj_tra, anchor_adj_tem, anchor_adj_dis
         return mp_tra, mp_tem, mp_dis, anchor_adj_tra, anchor_adj_tem, anchor_adj_dis
         # if time_adj_matrix is not None:
         #     output_tem, output_dis = self.predefined_embedding(x, time_adj_matrix, dis_adj_matrix)
