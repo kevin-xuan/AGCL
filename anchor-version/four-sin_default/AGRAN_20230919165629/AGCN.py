@@ -100,7 +100,7 @@ class AGCN_anchor(nn.Module):
         mp_tem = torch.cat([inputs.weight[0, :].unsqueeze(dim=0), output_tem], dim=0)
         mp_dis = torch.cat([inputs.weight[0, :].unsqueeze(dim=0), output_dis], dim=0)
         
-        return mp_tra, mp_tem, mp_dis, anchor_adj_tra, anchor_adj_tem, anchor_adj_dis, anchor_adj_tra.argmax(-1), anchor_adj_tem.argmax(-1), anchor_adj_dis.argmax(-1)
+        return mp_tra, mp_tem, mp_dis, anchor_adj_tra, anchor_adj_tem, anchor_adj_dis
         return mp_tra, mp_tem, mp_dis, anchor_adj_tra, anchor_adj_tem, anchor_adj_dis
         # if time_adj_matrix is not None:
         #     output_tem, output_dis = self.predefined_embedding(x, time_adj_matrix, dis_adj_matrix)

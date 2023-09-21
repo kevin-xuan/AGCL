@@ -34,7 +34,7 @@ class FilterLayer(torch.nn.Module):
         super(FilterLayer, self).__init__()
         self.complex_weight = torch.nn.Parameter(torch.randn(1, max_len//2 + 1, hidden_units, 2, dtype=torch.float32) * 0.02)
         self.out_dropout = torch.nn.Dropout(dropout_rate)
-        # self.LayerNorm = torch.nn.LayerNorm(hidden_units, eps=1e-18)
+        self.LayerNorm = torch.nn.LayerNorm(hidden_units, eps=1e-18)
 
 
     def forward(self, input_tensor):
@@ -45,8 +45,7 @@ class FilterLayer(torch.nn.Module):
         x = x * weight
         sequence_emb_fft = torch.fft.irfft(x, n=seq_len, dim=1, norm='ortho')
         hidden_states = self.out_dropout(sequence_emb_fft)
-        # hidden_states = self.LayerNorm(hidden_states + input_tensor)
-        hidden_states = hidden_states + input_tensor
+        hidden_states = self.LayerNorm(hidden_states + input_tensor)
 
         return hidden_states
 
@@ -176,7 +175,7 @@ class AGRAN_anchor(torch.nn.Module):
         for _ in range(args.num_blocks):  # 2
             new_attn_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
             self.attention_layernorms.append(new_attn_layernorm)
-            # #* filter layers
+            #* filter layers
             # new_filter_layer = FilterLayer(args.maxlen, args.hidden_units, args.dropout_rate)
             # self.filter_layers.append(new_filter_layer)
             
@@ -232,7 +231,8 @@ class AGRAN_anchor(torch.nn.Module):
 
         for i in range(len(self.attention_layers)):
             Q = self.attention_layernorms[i](seqs)
-            mha_outputs = self.attention_layers[i](Q, seqs,  #* why do key==seqs rather than key==Q?
+            # Q = self.filter_layers[i](seqs)
+            mha_outputs = self.attention_layers[i](Q, Q,  #* why do key==seqs rather than key==Q?
                                             timeline_mask, attention_mask,
                                             time_matrix_K, time_matrix_V,
                                             dis_matrix_K,dis_matrix_V,

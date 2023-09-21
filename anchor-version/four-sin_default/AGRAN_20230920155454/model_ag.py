@@ -28,27 +28,6 @@ class PointWiseFeedForward(torch.nn.Module):
         outputs = outputs.transpose(-1, -2)
         outputs += inputs
         return outputs
-    
-class FilterLayer(torch.nn.Module):
-    def __init__(self, max_len, hidden_units, dropout_rate):
-        super(FilterLayer, self).__init__()
-        self.complex_weight = torch.nn.Parameter(torch.randn(1, max_len//2 + 1, hidden_units, 2, dtype=torch.float32) * 0.02)
-        self.out_dropout = torch.nn.Dropout(dropout_rate)
-        # self.LayerNorm = torch.nn.LayerNorm(hidden_units, eps=1e-18)
-
-
-    def forward(self, input_tensor):
-        # [batch, seq_len, hidden]
-        batch, seq_len, hidden = input_tensor.shape
-        x = torch.fft.rfft(input_tensor, dim=1, norm='ortho')
-        weight = torch.view_as_complex(self.complex_weight)
-        x = x * weight
-        sequence_emb_fft = torch.fft.irfft(x, n=seq_len, dim=1, norm='ortho')
-        hidden_states = self.out_dropout(sequence_emb_fft)
-        # hidden_states = self.LayerNorm(hidden_states + input_tensor)
-        hidden_states = hidden_states + input_tensor
-
-        return hidden_states
 
 
 class TimeAwareMultiHeadAttention(torch.nn.Module):
@@ -162,12 +141,10 @@ class AGRAN_anchor(torch.nn.Module):
         self.recon_tra = 1.0
         self.recon_tem = 1.0
         self.recon_dis = 1.0
-        
-        # self.filter_layers = torch.nn.ModuleList()
-        # self.classifier = torch.nn.Sequential(
-        #     # torch.nn.Linear(args.hidden_units, args.hidden_units),
-        #     torch.nn.Linear(args.hidden_units, args.anchor_num)
-        # )
+        self.classifier = torch.nn.Sequential(
+            # torch.nn.Linear(args.hidden_units, args.hidden_units),
+            torch.nn.Linear(args.hidden_units, args.anchor_num)
+        )
         # self.degree_pos_K_emb = torch.nn.Embedding(1, args.hidden_units)
         # self.degree_pos_V_emb = torch.nn.Embedding(1, args.hidden_units)
         # self.degree_pos_K_emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
@@ -176,10 +153,7 @@ class AGRAN_anchor(torch.nn.Module):
         for _ in range(args.num_blocks):  # 2
             new_attn_layernorm = torch.nn.LayerNorm(args.hidden_units, eps=1e-8)
             self.attention_layernorms.append(new_attn_layernorm)
-            # #* filter layers
-            # new_filter_layer = FilterLayer(args.maxlen, args.hidden_units, args.dropout_rate)
-            # self.filter_layers.append(new_filter_layer)
-            
+
             new_attn_layer = TimeAwareMultiHeadAttention(args.hidden_units, 
                                                          args.num_heads, 
                                                          args.dropout_rate, 
@@ -263,11 +237,10 @@ class AGRAN_anchor(torch.nn.Module):
         # recon_loss = self.recon_tra * recon_loss_tra + self.recon_tem * recon_loss_tem + self.recon_dis * recon_loss_dis
         
         #* classification loss
-        # tra_class_loss = F.cross_entropy(self.classifier(item_embs[1:,]), class_tra)
-        # tem_class_loss = F.cross_entropy(self.classifier(item_embs_tem[1:,]), class_tem)
-        # dis_class_loss = F.cross_entropy(self.classifier(item_embs_dis[1:,]), class_dis)
-        # recon_loss = self.recon_tra * tra_class_loss + self.recon_tem * tem_class_loss + self.recon_dis * dis_class_loss
-        recon_loss = torch.zeros(1).to(self.dev)
+        tra_class_loss = F.cross_entropy(self.classifier(item_embs[1:,]), class_tra)
+        tem_class_loss = F.cross_entropy(self.classifier(item_embs_tem[1:,]), class_tem)
+        dis_class_loss = F.cross_entropy(self.classifier(item_embs_dis[1:,]), class_dis)
+        recon_loss = self.recon_tra * tra_class_loss + self.recon_tem * tem_class_loss + self.recon_dis * dis_class_loss
         
         #* contrastive learning
         non_anchor_idx = set(range(1, item_embs.shape[0])).difference(set(anchor_idx.cpu().numpy().tolist()).union(set(anchor_idx_tem.cpu().numpy().tolist())))

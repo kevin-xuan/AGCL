@@ -79,7 +79,7 @@ class Validdataset(Dataset):
         return len(self.seqs)
     
 class Testdataset(Dataset):
-    def __init__(self, all_seqs, all_time_matrix, all_distance_matrix,all_labels):
+    def __init__(self, all_seqs, all_time_matrix, all_distance_matrix, all_labels):
 
         self.seqs = all_seqs
         self.time_matrix = all_time_matrix

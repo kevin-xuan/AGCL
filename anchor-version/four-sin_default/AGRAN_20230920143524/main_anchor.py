@@ -269,7 +269,7 @@ if __name__ == '__main__':
             loss += args.tra_kl_reg * tra_regular + args.time_kl_reg * time_regular #+ args.dis_kl_reg * dis_regular 
             loss += args.dis_kl_reg * dis_regular
             # loss += args.contra_reg * contra_loss
-            # loss += args.recon_reg * recon_loss
+            loss += args.recon_reg * recon_loss
             loss.backward()
             adam_optimizer.step()
         print('\nTrain epoch:%d, time: %f(s), rec_loss: %.4f, tra_kl_loss: %.4f, time_kl_loss: %.4f, dis_kl_loss: %.4f, contra_loss: %.4f, recon_loss: %.4f'

@@ -70,7 +70,6 @@ parser.add_argument('--tra_kl_reg', default=1.0, type=float)
 parser.add_argument('--dis_kl_reg', default=1.0, type=float)
 parser.add_argument('--time_kl_reg', default=1.0, type=float)
 parser.add_argument('--contra_reg', default=1.0, type=float)
-parser.add_argument('--recon_reg', default=1.0, type=float)
 parser.add_argument('--tra_delta', default=0., type=float)
 parser.add_argument('--tem_delta', default=0.4, type=float)
 parser.add_argument('--dis_delta', default=0., type=float)
@@ -245,10 +244,9 @@ if __name__ == '__main__':
         # kmeans = faiss.Kmeans(args.hidden_units, args.anchor_num, niter=5, verbose=False)
         rec_losses, tra_kl_losses, dis_kl_losses, time_kl_losses = [], [], [], []
         contra_losses = []
-        recon_losses = []
         for step, instance in tqdm(enumerate(dataloader), total=num_batch, ncols=70, leave=False, unit='b'):
             u, seq, time_seq, pos, neg, time_matrix, dis_matrix = instance
-            item_embs, pos_logits, neg_logits, fin_logits, support, support_tem, support_dis, contra_loss, recon_loss = model(u, seq, time_matrix, dis_matrix, pos, neg, anchor_idx, anchor_idx_tem, anchor_idx_dis, time_adj_matrix, dis_adj_matrix, spatial_bias, user_bias)
+            item_embs, pos_logits, neg_logits, fin_logits, support, support_tem, support_dis, contra_loss = model(u, seq, time_matrix, dis_matrix, pos, neg, anchor_idx, anchor_idx_tem, anchor_idx_dis, time_adj_matrix, dis_adj_matrix, spatial_bias, user_bias)
             tra_regular = kl_loss(torch.log(torch.softmax(mask(support.transpose(1,0)),dim=-1)+1e-9),torch.softmax(mask(tra_prior),dim=-1))
             time_regular = kl_loss(torch.log(torch.softmax(mask(support_tem.transpose(1,0)),dim=-1)+1e-9),torch.softmax(mask(time_prior),dim=-1))
             dis_regular = kl_loss(torch.log(torch.softmax(mask(support_dis.transpose(1,0)),dim=-1)+1e-9),torch.softmax(mask(dis_prior),dim=-1))
@@ -265,17 +263,15 @@ if __name__ == '__main__':
             time_kl_losses.append(time_regular.item())
             dis_kl_losses.append(dis_regular.item())
             contra_losses.append(contra_loss.item())
-            recon_losses.append(recon_loss.item())
             loss += args.tra_kl_reg * tra_regular + args.time_kl_reg * time_regular #+ args.dis_kl_reg * dis_regular 
             loss += args.dis_kl_reg * dis_regular
             # loss += args.contra_reg * contra_loss
-            # loss += args.recon_reg * recon_loss
             loss.backward()
             adam_optimizer.step()
-        print('\nTrain epoch:%d, time: %f(s), rec_loss: %.4f, tra_kl_loss: %.4f, time_kl_loss: %.4f, dis_kl_loss: %.4f, contra_loss: %.4f, recon_loss: %.4f'
-                % (epoch, T, np.array(rec_losses).mean(), np.array(tra_kl_losses).mean(), np.array(time_kl_losses).mean(), np.array(dis_kl_losses).mean(), np.array(contra_losses).mean(), np.array(recon_losses).mean())) 
-        f.write('\nTrain epoch:%d, time: %f(s), rec_loss: %.4f, tra_kl_loss: %.4f, time_kl_loss: %.4f, dis_kl_loss: %.4f, contra_loss: %.4f, recon_loss: %.4f'
-                  % (epoch, T, np.array(rec_losses).mean(), np.array(tra_kl_losses).mean(), np.array(time_kl_losses).mean(), np.array(dis_kl_losses).mean(), np.array(contra_losses).mean(), np.array(recon_losses).mean())) 
+        print('\nTrain epoch:%d, time: %f(s), rec_loss: %.4f, tra_kl_loss: %.4f, time_kl_loss: %.4f, dis_kl_loss: %.4f, contra_loss: %.4f'
+                % (epoch, T, np.array(rec_losses).mean(), np.array(tra_kl_losses).mean(), np.array(time_kl_losses).mean(), np.array(dis_kl_losses).mean(), np.array(contra_losses).mean())) 
+        f.write('\nTrain epoch:%d, time: %f(s), rec_loss: %.4f, tra_kl_loss: %.4f, time_kl_loss: %.4f, dis_kl_loss: %.4f, contra_loss: %.4f'
+                  % (epoch, T, np.array(rec_losses).mean(), np.array(tra_kl_losses).mean(), np.array(time_kl_losses).mean(), np.array(dis_kl_losses).mean(), np.array(contra_losses).mean())) 
         
         # anchor_idx = select_anchor(kmeans, index, item_embs)
         if epoch % args.valid_epoch == 0:
