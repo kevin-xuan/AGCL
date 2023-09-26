@@ -36,11 +36,11 @@ def cleanAndsort(User, time_map):
 
     User_res = dict()
     for user, items in User_filted.items():
-        User_res[user_map[user]] = list(map(lambda x: [item_map[x[0]], time_map[float(x[2])], x[1]], items))  # [[loc_id, time, gps], ...]
+        User_res[user_map[user]] = list(map(lambda x: [item_map[x[0]], x[1], time_map[float(x[2])]], items))  # [[loc_id, time, gps], ...]
 
     time_max = set()
     for user, items in User_res.items():
-        time_list = list(map(lambda x: x[1], items))  # the list of each check-in's time slot of each user
+        time_list = list(map(lambda x: x[-1], items))  # the list of each check-in's time slot of each user
         time_diff = set()
         for i in range(len(time_list)-1):
             if time_list[i+1] - time_list[i] != 0:  #* record the difference between consecutive items
@@ -50,8 +50,8 @@ def cleanAndsort(User, time_map):
         else:
             time_scale = min(time_diff)  # minimal consecutive time difference of each user as scale
         time_min = min(time_list)  # each user's minimal time slot
-        User_res[user] = list(map(lambda x: [x[0], int(round((x[1]-time_min)/time_scale)+1), x[2]], items))  # Equation (12)
-        time_max.add(max(set(map(lambda x: x[1], User_res[user]))))  # each user's maximal scaled time slot
+        User_res[user] = list(map(lambda x: [x[0], x[1], int(round((x[-1]-time_min)/time_scale)+1)], items))  # Equation (12)
+        time_max.add(max(set(map(lambda x: x[-1], User_res[user]))))  # each user's maximal scaled time slot
 
     return User_res, len(user_set), len(item_set), max(time_max)
 
@@ -69,13 +69,14 @@ if __name__ == '__main__':
     # [(32°32′ N to 42° N), (114°8′ W to 124°26′ W), (35° N to 42° N), (114° 2′ W to 120° W)]  #* result from wikipedia
     # distance_limit = [(32.53333333333333, 42.7), (-123.56666666666666, -113.86666666666666), (35.583333333333336, 42.7), (-122, -115.9)]  # latitude and longitude range of California and Nevada
     # distance_limit = [(32.32, 42), (-124.26, -114.8), (35, 42), (-120, -114.2)]
-    distance_limit = [(32, 42), (-124.2, -115.18)]  # (-123.56666666666666, -113.86666666666666):{11742, 35833},(-123.56666666666666, -115.9):{10694, 33187},(-122, -115.9):{7374, 20955},(-122, -113.86666666666666):{8601, 23601}
+    # distance_limit = [(32., 42), (-124.2, -115.18)]  # (-123.56666666666666, -113.86666666666666):{11742, 35833},(-123.56666666666666, -115.9):{10694, 33187},(-122, -115.9):{7374, 20955},(-122, -113.86666666666666):{8601, 23601}
+    distance_limit = [(32.32, 42), (-123.56666666666666, -113.86666666666666)] 
     print(distance_limit)  #* (10919, 35160)
     # filter dataset
     for line in f:  
         u, timestamp, lat, lon, i = line.rstrip().split('\t')  
         lat_, lon_ = float(lat), float(lon)  # latitude and longitude
-        timestamp = (datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ") - time_limit).total_seconds()  # unix seconds
+        timestamp = (datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ") - time_limit).total_seconds() // 60  # unix seconds -> minutes
         if timestamp < 0 or filter_latlon(lat_, lon_, distance_limit):
             continue
         f_w.write('\t'.join([u, str(timestamp), lat, lon, i]) + ' \n')
@@ -95,8 +96,8 @@ if __name__ == '__main__':
     print(len(user_count), len(item_count))
     f.close()  
     
-    usernum = 0  # gowalla: 107092  85022(2019-7-1)  84297(2019-12-1)  68511(2010-5-1)  51273(2010-8-1)  35063(2010-9-15)  32184(2010-9-20)  34566(2010-9-25)  24953(2010-10-1)  7402(2010-10-15)
-    itemnum = 0  # gowalla: 1280969  308877(2019-7-1) 303804(2019-12-1) 208823(2010-5-1)  114099(2010-8-1)  50129(2010-9-15)  42051(2010-9-20)  29301(2010-9-25)  25533(2010-10-1)  4364(2010-10-15)
+    usernum = 0  
+    itemnum = 0  
     user_map = dict()
     item_map = dict()
     time_set = set()
@@ -136,7 +137,7 @@ if __name__ == '__main__':
       
     print('Preparing done...')
     time_map = timeSlice(time_set)  # record each time interval between it and time_min
-    User, usernum, itemnum, timenum = cleanAndsort(User, time_map)  # users' check-ins, usernum, itemnum, and maximal scaled time slot among all users' check-ins 
+    # User_, usernum, itemnum, timenum = cleanAndsort(User, time_map)  # users' check-ins, usernum, itemnum, and maximal scaled time slot among all users' check-ins 
     cc = 0.
     for u in User:
         cc += len(User[u])
@@ -144,8 +145,8 @@ if __name__ == '__main__':
     print(itemnum)
     print('average sequence length: %.2f' % (cc / len(User)))
     
-    # f = open('data/%s.txt' % args.dataset, 'w')
-    # for user in User.keys():
-    #     for i in User[user]:
-    #         f.write('%s\t%s\t%s\t%s\n' % (user, i[0], i[1],i[2],))
-    # f.close()   
+    f = open('data/%s.txt' % args.dataset, 'w')
+    for user in User.keys():
+        for i in User[user]:
+            f.write('%s\t%s\t%s\t%s\n' % (user, i[0], i[1], i[2]))
+    f.close()   

@@ -12,7 +12,7 @@ from constant import DATA_NAME, SCHEME
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', default='four-sin',type=str)  
+parser.add_argument('--dataset', default='gowalla',type=str)  # 'four-sin'  'gowalla'
 args = parser.parse_args()
 
 def haversine(lat1, lon1, lat2, lon2):

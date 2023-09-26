@@ -4,9 +4,10 @@ from tqdm import tqdm
 from scipy.sparse import csr_matrix, dok_matrix
 import numpy as np
 import scipy.sparse as sp
+from datetime import datetime
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', default='four-sin',type=str)  
+parser.add_argument('--dataset', default='gowalla',type=str)  
 args = parser.parse_args()
 
 def normalize(mx):
@@ -61,36 +62,56 @@ def data_partition(fname):
     print('Preparing data...')
     user_count = defaultdict(int)
     item_count = defaultdict(int)
+    user2id  = defaultdict(int)
+    item2id  = defaultdict(int)
     time_set = set()
-    f = open('data/%s.txt' % fname, 'r')
+    f = open('data/checkins-%s.txt' % fname, 'r')  #* Graph-Flashback
     for line in f:  #* count user check-ins count and item count statistics for filtering unpopular users and items
         try:
-            u, i, location, timestamp = line.rstrip().split('\t')
+            # u, i, location, timestamp = line.rstrip().split('\t')
+            u, timestamp, lat, long, i = line.rstrip().split('\t')
         except:
             u, i, timestamp = line.rstrip().split('\t')
         u = int(u)
         i = int(i)
-        user_count[u]+=1  # foursquare: 1~4368
-        item_count[i]+=1  # foursquare: 1~9731
+        #* graph-flashback mapping
+        if user2id.get(u) is None:
+            user2id[u] = len(user2id)
+        if item2id.get(i) is None:
+            item2id[i] = len(item2id)
+        # user_count[u]+=1  # foursquare: 1~4368  gowalla: 1~10915
+        # item_count[i]+=1  # foursquare: 1~9731  gowalla: 1~33805
+        user_count[user2id[u]]+=1  # foursquare: 1~4368  gowalla: 1~10915
+        item_count[item2id[i]]+=1  # foursquare: 1~9731  gowalla: 1~33805
     f.close()
     
-    f = open('data/%s.txt' % fname, 'r')
+    f = open('data/checkins-%s.txt' % fname, 'r')  #* Graph-Flashback
     for line in f:
         try:
-            u, i, location, timestamp = line.rstrip().split('\t')
+            # u, i, location, timestamp = line.rstrip().split('\t')
+            u, timestamp, lat, long, i = line.rstrip().split('\t')
+            timestamp =(datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ") - datetime(1970, 1,
+                                                                                  1)).total_seconds()  # unix seconds
+            location = ','.join([lat, long])
         except:
             u, i, timestamp = line.rstrip().split('\t')
         u = int(u)
         i = int(i)
         timestamp = float(timestamp)
-        if user_count[u]<5 or item_count[i]<5:
+        # if user_count[u]<5 or item_count[i]<5:
+        #     continue
+        if user_count[user2id[u]]<5 or item_count[item2id[i]]<5:
             continue
         time_set.add(timestamp)  # record time that all check-ins happened
-        User[u].append([i, timestamp, location])  # record user check-ins
+        User[user2id[u]].append([item2id[i], timestamp, location])  # record user check-ins
     f.close()
     
     time_map = timeSlice(time_set)  # record each time interval between it and time_min
     User, user_num, item_num = cleanAndsort(User, time_map) 
+    f = open('data/checkins-%s_agran.txt' % args.dataset, 'w')
+    for user in User.keys():
+        for i in User[user]:
+            f.write('%s\t%s\t%s\t%s\n' % (str(user), str(i[0]), i[2], i[1]))  # (user, item, coord, timestamp)
 
     for user in User:
         nfeedback = len(User[user])
@@ -110,8 +131,8 @@ def data_partition(fname):
         interaction_graph[user_id, item_list[-1]] += 1
     transition_graph = csr_matrix(normalize(transition_graph.A))
     interaction_graph = csr_matrix(normalize(interaction_graph.A))
-    sp.save_npz('data/%s_transaction_kl_notest.npz' % args.dataset, transition_graph)
-    sp.save_npz('data/%s_interaction_kl_notest.npz' % args.dataset, interaction_graph)
+    sp.save_npz('data/checkins-%s_transaction_kl_notest.npz' % args.dataset, transition_graph)
+    sp.save_npz('data/checkins-%s_interaction_kl_notest.npz' % args.dataset, interaction_graph)
     print('Preparing done...')
     
 
