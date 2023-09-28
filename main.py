@@ -48,7 +48,7 @@ setup_seed(42)
 
 parser = argparse.ArgumentParser()
 # dataset
-parser.add_argument('--dataset', default='four-sin', choices=['gowalla', 'four-sin'], type=str, help="dataset name")
+parser.add_argument('--dataset', default='gowalla', choices=['gowalla', 'four-sin'], type=str, help="dataset name")
 # training
 parser.add_argument('--train_dir', default='default',type=str, help="log save directory")
 parser.add_argument('--batch_size', default=64, type=int, help="batch size")

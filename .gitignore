@@ -1,8 +1,13 @@
-data
-preprocess.py
-preprocess2.py
+data/pretrained-model
+data/*.pickle
+data/*.pkl
+data/sin_transaction_kl_notest.npz
 four-sin_default
 gowalla_default
 KGE/dataset
-KGE/POI_graph
-# visualizations
+# KGE/POI_graph
+KGE/POI_graph/gowalla_scheme2_transe_loc_spatial_100.pkl
+KGE/POI_graph/gowalla_scheme2_transe_loc_temporal_100.pkl
+visualizations
+preprocess.py
+preprocess2.py
