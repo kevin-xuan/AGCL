@@ -111,40 +111,42 @@ dimension = [20, 40, 60, 80, 100]
 # plt.savefig('Contrastive_Regularization_NDCG@2-5.pdf')
 # plt.clf()
 
-# our = [0.1805, 0.2665, 0.3392, 0.1612, 0.1998, 0.2233]
-# foursquare_anchor_100 = [0.1790, 0.2615, 0.3348, 0.1577, 0.1946, 0.2183]
-# foursquare_anchor_200 = [0.1725, 0.2594, 0.3331, 0.1528, 0.1917, 0.2153]
-# foursquare_anchor_1000 = [0.1764, 0.2600, 0.3389, 0.1561, 0.1936, 0.2190]
-# foursquare_anchor_2000 = [0.1753, 0.2598, 0.3353, 0.1550, 0.1928, 0.2172]
-# foursquare_anchor_acc2 = [0.1790, 0.1725, 0.1805, 0.1764, 0.1753] #* 选acc@2与acc@5
-# foursquare_anchor_acc5 = [0.2615, 0.2594, 0.2665, 0.2600, 0.2598]
-# plt.plot(dimension, foursquare_anchor_acc2, markes[3], label='Acc@2', ms=10)
-# plt.plot(dimension, foursquare_anchor_acc5, markes[1], label='Acc@5', ms=10)
-# plt.xlabel("Anchor number", fontsize=20)
-# plt.ylabel("Acc", fontsize=20)
-# plt.axis(ymin=0.17, ymax=0.27)
-# plt.yticks(np.arange(0.17, 0.2701, 0.02), fontsize=20)
-# plt.xticks(dimension, [100, 200, 500, 1000, 2000], fontsize=20)
-# plt.grid(linestyle='--', linewidth=1, alpha=0.3) # color='r', 
-# plt.tight_layout()
-# plt.legend(fontsize=20, frameon=False)
-# plt.savefig('Anchor_number_Acc@2-5.pdf')
-# plt.clf()
-# foursquare_anchor_ndcg2 = [0.1577, 0.1528, 0.1612, 0.1561, 0.1550] #* 选ndcg@2与ndcg@5
-# foursquare_anchor_ndcg5 = [0.1946, 0.1917, 0.1998, 0.1936, 0.1928]
-# plt.plot(dimension, foursquare_anchor_ndcg2, markes[3], label='NDCG@2', ms=10)
-# plt.plot(dimension, foursquare_anchor_ndcg5, markes[1], label='NDCG@5', ms=10)
-# plt.xlabel("Anchor number", fontsize=20)
-# plt.ylabel("NDCG", fontsize=20)
-# plt.axis(ymin=0.15, ymax=0.21)
-# plt.yticks(np.arange(0.15, 0.2101, 0.01), fontsize=20)
-# plt.xticks(dimension, [100, 200, 500, 1000, 2000], fontsize=20)
-# plt.grid(linestyle='--', linewidth=1, alpha=0.3) # color='r', 
-# plt.tight_layout()
-# plt.legend(fontsize=20, frameon=False)
-# plt.savefig('Anchor_number_NDCG@2-5.pdf')
-# plt.clf()
+#* anchor number
+our = [0.1805, 0.2665, 0.3392, 0.1612, 0.1998, 0.2233]
+foursquare_anchor_100 = [0.1790, 0.2615, 0.3348, 0.1577, 0.1946, 0.2183]
+foursquare_anchor_200 = [0.1725, 0.2594, 0.3331, 0.1528, 0.1917, 0.2153]
+foursquare_anchor_1000 = [0.1764, 0.2600, 0.3389, 0.1561, 0.1936, 0.2190]
+foursquare_anchor_2000 = [0.1753, 0.2598, 0.3353, 0.1550, 0.1928, 0.2172]
+foursquare_anchor_acc2 = [0.1790, 0.1725, 0.1805, 0.1764, 0.1753] #* 选acc@2与acc@5
+foursquare_anchor_acc5 = [0.2615, 0.2594, 0.2665, 0.2600, 0.2598]
+plt.plot(dimension, foursquare_anchor_acc2, markes[3], label='Acc@2', ms=10)
+plt.plot(dimension, foursquare_anchor_acc5, markes[1], label='Acc@5', ms=10)
+plt.xlabel("Anchor number", fontsize=20)
+plt.ylabel("Acc", fontsize=20)
+plt.axis(ymin=0.17, ymax=0.27)
+plt.yticks(np.arange(0.17, 0.2701, 0.02), fontsize=20)
+plt.xticks(dimension, [100, 200, 500, 1000, 2000], fontsize=20)
+plt.grid(linestyle='--', linewidth=1, alpha=0.3) # color='r', 
+plt.tight_layout()
+plt.legend(fontsize=20, frameon=False)
+plt.savefig('Anchor_number_Acc@2-5.pdf')
+plt.clf()
+foursquare_anchor_ndcg2 = [0.1577, 0.1528, 0.1612, 0.1561, 0.1550] #* 选ndcg@2与ndcg@5
+foursquare_anchor_ndcg5 = [0.1946, 0.1917, 0.1998, 0.1936, 0.1928]
+plt.plot(dimension, foursquare_anchor_ndcg2, markes[3], label='NDCG@2', ms=10)
+plt.plot(dimension, foursquare_anchor_ndcg5, markes[1], label='NDCG@5', ms=10)
+plt.xlabel("Anchor number", fontsize=20)
+plt.ylabel("NDCG", fontsize=20)
+plt.axis(ymin=0.15, ymax=0.21)
+plt.yticks(np.arange(0.15, 0.2101, 0.01), fontsize=20)
+plt.xticks(dimension, [100, 200, 500, 1000, 2000], fontsize=20)
+plt.grid(linestyle='--', linewidth=1, alpha=0.3) # color='r', 
+plt.tight_layout()
+plt.legend(fontsize=20, frameon=False)
+plt.savefig('Anchor_number_NDCG@2-5.pdf')
+plt.clf()
 
+# #* GCN layer number
 # our = [0.1805, 0.2665, 0.3392, 0.1612, 0.1998, 0.2233]
 # foursquare_gcn_1 = [0.1688, 0.2637, 0.3376, 0.1511, 0.1908, 0.2146]
 # foursquare_gcn_2 = [0.1785, 0.2667, 0.3385, 0.1571, 0.1968, 0.2200]
@@ -179,46 +181,47 @@ dimension = [20, 40, 60, 80, 100]
 # plt.savefig('GCN_layer_NDCG@2-5.pdf')
 # plt.clf()
 
-our = [0.1805, 0.2665, 0.3392, 0.1612, 0.1998, 0.2233]
-foursquare_tra_delta_01 = [0.1813, 0.2708, 0.3420, 0.1618, 0.2018, 0.2248]  #* tra选0或者0.1差不多, 默认是0
-foursquare_tra_delta_02 = [0.1742, 0.2669, 0.3394, 0.1553, 0.1968, 0.2201]
-foursquare_tra_delta_03 = [0.1792, 0.2637, 0.3376, 0.1584, 0.1964, 0.2203]
-foursquare_tra_delta_04 = [0.1774, 0.2687, 0.3396, 0.1567, 0.1979, 0.2206]
-foursquare_gcn_acc2 = [0.1688, 0.1785, 0.1805, 0.1738, 0.1725] #* 选acc@2与acc@5
-foursquare_gcn_acc5 = [0.2637, 0.2667, 0.2665, 0.2557, 0.2544]
-plt.plot(dimension, foursquare_gcn_acc2, markes[3], label='Acc@2', ms=10)
-plt.plot(dimension, foursquare_gcn_acc5, markes[1], label='Acc@5', ms=10)
-plt.xlabel("GCN layer number", fontsize=20)
-plt.ylabel("Acc", fontsize=20)
-plt.axis(ymin=0.16, ymax=0.28)
-plt.yticks(np.arange(0.16, 0.2701, 0.02), fontsize=20)
-plt.xticks(dimension, [1, 2, 3, 4, 5], fontsize=20)
-plt.grid(linestyle='--', linewidth=1, alpha=0.3) # color='r', 
-plt.tight_layout()
-plt.legend(fontsize=20, frameon=False)
-plt.savefig('GCN_layer_Acc@2-5.pdf')
-plt.clf()
-foursquare_gcn_ndcg2 = [0.1511, 0.1571, 0.1612, 0.1556, 0.1523] #* 选ndcg@2与ndcg@5
-foursquare_gcn_ndcg5 = [0.1908, 0.1968, 0.1998, 0.1926, 0.1887]
-plt.plot(dimension, foursquare_gcn_ndcg2, markes[3], label='NDCG@2', ms=10)
-plt.plot(dimension, foursquare_gcn_ndcg5, markes[1], label='NDCG@5', ms=10)
-plt.xlabel("GCN layer number", fontsize=20)
-plt.ylabel("NDCG", fontsize=20)
-plt.axis(ymin=0.15, ymax=0.21)
-plt.yticks(np.arange(0.15, 0.2101, 0.01), fontsize=20)
-plt.xticks(dimension, [1, 2, 3, 4, 5], fontsize=20)
-plt.grid(linestyle='--', linewidth=1, alpha=0.3) # color='r', 
-plt.tight_layout()
-plt.legend(fontsize=20, frameon=False)
-plt.savefig('GCN_layer_NDCG@2-5.pdf')
-plt.clf()
+# #* adaptive graph threshold
+# our = [0.1805, 0.2665, 0.3392, 0.1612, 0.1998, 0.2233]
+# foursquare_tra_delta_01 = [0.1813, 0.2708, 0.3420, 0.1618, 0.2018, 0.2248]  #* tra选0或者0.1差不多, 默认是0
+# foursquare_tra_delta_02 = [0.1742, 0.2669, 0.3394, 0.1553, 0.1968, 0.2201]
+# foursquare_tra_delta_03 = [0.1792, 0.2637, 0.3376, 0.1584, 0.1964, 0.2203]
+# foursquare_tra_delta_04 = [0.1774, 0.2687, 0.3396, 0.1567, 0.1979, 0.2206]
+# foursquare_tra_delta_acc2 = [0.1688, 0.1785, 0.1805, 0.1738, 0.1725] #* 选acc@2与acc@5
+# foursquare_tra_delta_acc5 = [0.2637, 0.2667, 0.2665, 0.2557, 0.2544]
+# plt.plot(dimension, foursquare_tra_delta_acc2, markes[3], label='Acc@2', ms=10)
+# plt.plot(dimension, foursquare_tra_delta_acc5, markes[1], label='Acc@5', ms=10)
+# plt.xlabel("GCN layer number", fontsize=20)
+# plt.ylabel("Acc", fontsize=20)
+# plt.axis(ymin=0.16, ymax=0.28)
+# plt.yticks(np.arange(0.16, 0.2701, 0.02), fontsize=20)
+# plt.xticks(dimension, [1, 2, 3, 4, 5], fontsize=20)
+# plt.grid(linestyle='--', linewidth=1, alpha=0.3) # color='r', 
+# plt.tight_layout()
+# plt.legend(fontsize=20, frameon=False)
+# plt.savefig('GCN_layer_Acc@2-5.pdf')
+# plt.clf()
+# foursquare_gcn_ndcg2 = [0.1511, 0.1571, 0.1612, 0.1556, 0.1523] #* 选ndcg@2与ndcg@5
+# foursquare_gcn_ndcg5 = [0.1908, 0.1968, 0.1998, 0.1926, 0.1887]
+# plt.plot(dimension, foursquare_gcn_ndcg2, markes[3], label='NDCG@2', ms=10)
+# plt.plot(dimension, foursquare_gcn_ndcg5, markes[1], label='NDCG@5', ms=10)
+# plt.xlabel("GCN layer number", fontsize=20)
+# plt.ylabel("NDCG", fontsize=20)
+# plt.axis(ymin=0.15, ymax=0.21)
+# plt.yticks(np.arange(0.15, 0.2101, 0.01), fontsize=20)
+# plt.xticks(dimension, [1, 2, 3, 4, 5], fontsize=20)
+# plt.grid(linestyle='--', linewidth=1, alpha=0.3) # color='r', 
+# plt.tight_layout()
+# plt.legend(fontsize=20, frameon=False)
+# plt.savefig('GCN_layer_NDCG@2-5.pdf')
+# plt.clf()
 
-foursquare_tem_delta_00 = [0.1785, 0.2622, 0.3333, 0.1590, 0.1965, 0.2196]
-foursquare_tem_delta_01 = [0.1785, 0.2613, 0.3344, 0.1575, 0.1947, 0.2183]
-foursquare_tem_delta_02 = [0.1781, 0.2637, 0.3413, 0.1589, 0.1973, 0.2224]
-foursquare_tem_delta_03 = [0.1781, 0.2650, 0.3379, 0.1586, 0.1979, 0.2216]  #* tem选0.4, 默认是0.4
+# foursquare_tem_delta_00 = [0.1785, 0.2622, 0.3333, 0.1590, 0.1965, 0.2196]
+# foursquare_tem_delta_01 = [0.1785, 0.2613, 0.3344, 0.1575, 0.1947, 0.2183]
+# foursquare_tem_delta_02 = [0.1781, 0.2637, 0.3413, 0.1589, 0.1973, 0.2224]
+# foursquare_tem_delta_03 = [0.1781, 0.2650, 0.3379, 0.1586, 0.1979, 0.2216]  #* tem选0.4, 默认是0.4
 
-foursquare_dis_delta_01 = [0.1833, 0.2693, 0.3411, 0.1639, 0.2023, 0.2255]  #* dis选0.1 可能是随机数的原因导致的结果偏高, 就用默认的0吧, 画图不选recall@2
-foursquare_dis_delta_02 = [0.1787, 0.2697, 0.3385, 0.1592, 0.2002, 0.2225]
-foursquare_dis_delta_03 = [0.1856, 0.2689, 0.3370, 0.1633, 0.2007, 0.2227]
-foursquare_dis_delta_04 = [0.1824, 0.2704, 0.3411, 0.1624, 0.2022, 0.2248]
+# foursquare_dis_delta_01 = [0.1833, 0.2693, 0.3411, 0.1639, 0.2023, 0.2255]  #* dis选0.1 可能是随机数的原因导致的结果偏高, 就用默认的0吧, 画图不选recall@2
+# foursquare_dis_delta_02 = [0.1787, 0.2697, 0.3385, 0.1592, 0.2002, 0.2225]
+# foursquare_dis_delta_03 = [0.1856, 0.2689, 0.3370, 0.1633, 0.2007, 0.2227]
+# foursquare_dis_delta_04 = [0.1824, 0.2704, 0.3411, 0.1624, 0.2022, 0.2248]
