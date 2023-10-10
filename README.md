@@ -20,4 +20,4 @@ python main.py
 
 ## Acknowledgement
 
-The code is implemented based on [ARGAN](https://github.com/JiachengLi1995/TiSASRec).
+The code is implemented based on [ARGAN](https://github.com/wangzb11/AGRAN).
