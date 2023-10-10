@@ -83,7 +83,7 @@ def Relation_dis(user_train, usernum, maxlen, dis_span):
     return data_train  
 
 def timeSlice(time_set):
-    time_min = min(time_set)  # min: 1090, max: 766041
+    time_min = min(time_set) 
     time_map = dict()
     for time in time_set:
         time_map[time] = int(round(float(time-time_min)))
@@ -141,8 +141,8 @@ def data_partition(fname):
     f = open('data/%s.txt' % fname, 'r')
     time_set = set()
 
-    user_count = defaultdict(int)  # foursquare: 4638 gowalla: 10915
-    item_count = defaultdict(int)  # foursquare: 9731 gowalla: 33805
+    user_count = defaultdict(int)  
+    item_count = defaultdict(int)  
     for line in f:
         try:
             u, i, location, timestamp = line.rstrip().split('\t')
@@ -186,48 +186,6 @@ def data_partition(fname):
             user_test[user].append(User[user][-1])
     print('Preparing done...')
     return [user_train, user_valid, user_test, usernum, itemnum, timenum]
-
-def mask_visit(prediction, visit_list):
-    visit_list = list(visit_list)
-    visit_list = torch.LongTensor(visit_list).to('cuda')
-    mask_prediction = prediction[0].scatter(-1,visit_list,-2e10).to('cuda')
-    return mask_prediction
-
-
-def sparse_dropout(x,rate):
-
-    random_tensor = 1-rate
-    noise_shape = x._indices()
-    noise_shape = noise_shape.shape[1]
-    random_tensor += torch.rand(noise_shape).to(x.device)
-    dropout_mask = torch.floor(random_tensor).bool()
-    i = x._indices()
-    v = x._values()
-
-    i = i[:,dropout_mask]
-    v = v[dropout_mask]
-
-    out = torch.sparse.FloatTensor(i,v,x.shape).to(x.device)
-
-    out = out*(1./(1-rate))
-
-    return out
-
-def get_adj_matrix(matrix):
-    row_sum = np.array(matrix.sum(1)) + 1e-24
-    degree_mat_inv_sqrt = sp.diags(np.power(row_sum, -0.5).flatten())
-    rel_matrix_normalized = degree_mat_inv_sqrt.dot(matrix.dot(degree_mat_inv_sqrt)).todense()
-    return rel_matrix_normalized
-
-def get_sp_adj_matrix(matrix):
-    row_sum = np.array(matrix.sum(1)) + 1e-24
-    degree_mat_inv_sqrt = sp.diags(np.power(row_sum, -0.5).flatten())
-    rel_matrix_normalized = degree_mat_inv_sqrt.dot(
-        matrix.dot(degree_mat_inv_sqrt)).tocoo()
-    indices = np.vstack((rel_matrix_normalized.row, rel_matrix_normalized.col)).transpose()
-    values = rel_matrix_normalized.data.astype(np.float32)
-    shape = rel_matrix_normalized.shape
-    return indices, values, shape
 
 def generate_vaild(dataset,args):
     [train, valid, test, usernum, itemnum, timenum] = copy.deepcopy(dataset)

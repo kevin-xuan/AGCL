@@ -20,7 +20,7 @@ def normalize(mx):
     return mx
 
 def timeSlice(time_set):
-    time_min = min(time_set)  # 1090.0 
+    time_min = min(time_set)  
     time_map = dict()
     for time in time_set:
         time_map[time] = int(round(float(time-time_min)))
@@ -61,16 +61,16 @@ def data_partition(fname):
     user_count = defaultdict(int)
     item_count = defaultdict(int)
     time_set = set()
-    f = open('data/%s.txt' % fname, 'r')  #* Graph-Flashback
-    for line in f:  #* count user check-ins count and item count statistics for filtering unpopular users and items
+    f = open('data/%s.txt' % fname, 'r')  # Graph-Flashback
+    for line in f:  # count user check-ins count and item count statistics for filtering unpopular users and items
         try:
             u, i, location, timestamp = line.rstrip().split('\t')
         except:
             u, i, timestamp = line.rstrip().split('\t')
         u = int(u)
         i = int(i)
-        user_count[u]+=1  # foursquare: 1~4368  gowalla: 1~10915
-        item_count[i]+=1  # foursquare: 1~9731  gowalla: 1~33805
+        user_count[u]+=1  
+        item_count[i]+=1  
     f.close()
     
     f = open('data/%s.txt' % fname, 'r')  

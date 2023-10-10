@@ -1,6 +1,7 @@
-# AGRAN
+# MAGCL
 
-This is the implementation for the paper: “Adaptive Graph Representation Learning for Next POI Recommendation.” SIGIR 2023
+This is the implementation for the paper: “Multi-faceted Adaptive Graph Contrastive Learning for Next Point-of-Interest Recommendation.” 
+
 
 
 ## Datasets
@@ -19,4 +20,4 @@ python main.py
 
 ## Acknowledgement
 
-The code is implemented based on [TiSASRec](https://github.com/JiachengLi1995/TiSASRec) and its [pytorch version](https://github.com/pmixer/TiSASRec.pytorch).
+The code is implemented based on [ARGAN](https://github.com/JiachengLi1995/TiSASRec).

@@ -42,11 +42,11 @@ class TimeAwareMultiHeadAttention(torch.nn.Module):
     def forward(self, queries, keys, time_mask, attn_mask, time_matrix_K, time_matrix_V, dis_matrix_K, dis_matrix_V, abs_pos_K, abs_pos_V):
         Q, K, V = self.Q_w(queries), self.K_w(keys), self.V_w(keys)
 
-        Q_ = torch.cat(torch.split(Q, self.head_size, dim=2), dim=0)  # (B * h, N, D // h)
+        Q_ = torch.cat(torch.split(Q, self.head_size, dim=2), dim=0)  
         K_ = torch.cat(torch.split(K, self.head_size, dim=2), dim=0)
         V_ = torch.cat(torch.split(V, self.head_size, dim=2), dim=0)
 
-        time_matrix_K_ = torch.cat(torch.split(time_matrix_K, self.head_size, dim=3), dim=0)  # (B * h, N, N, D // h)
+        time_matrix_K_ = torch.cat(torch.split(time_matrix_K, self.head_size, dim=3), dim=0)  
         time_matrix_V_ = torch.cat(torch.split(time_matrix_V, self.head_size, dim=3), dim=0)
         dis_matrix_K_ = torch.cat(torch.split(dis_matrix_K, self.head_size, dim=3), dim=0)
         dis_matrix_V_ = torch.cat(torch.split(dis_matrix_V, self.head_size, dim=3), dim=0)
@@ -88,13 +88,11 @@ class MAGCN(torch.nn.Module):
         self.user_num = user_num
         self.item_num = item_num
         self.dev = args.device
-        self.args = args
 
         self.item_emb = torch.nn.Embedding(self.item_num+1, args.hidden_units, padding_idx=0)
         self.item_emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
-        if self.args.time_prompt:
-            self.time_emb = torch.nn.Embedding(args.time_slot+1, args.hidden_units, padding_idx=0)
-            self.time_emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
+        self.time_emb = torch.nn.Embedding(args.time_slot+1, args.hidden_units, padding_idx=0)
+        self.time_emb_dropout = torch.nn.Dropout(p=args.dropout_rate)
         self.gcn = AGCN_anchor(args, input_dim=args.hidden_units, output_dim=args.hidden_units, layer=args.layer_num)
 
         self.abs_pos_K_emb = torch.nn.Embedding(args.maxlen, args.hidden_units)
@@ -125,8 +123,6 @@ class MAGCN(torch.nn.Module):
     
         self.contra_intra = args.contra_intra
         self.contra_inter = args.contra_inter
-        self.time_prompt = args.time_prompt
-        self.dis_prompt = args.dis_prompt
         self.separate_loss = torch.nn.TripletMarginLoss(margin=1.0)
 
         for _ in range(args.num_blocks):  # 2
@@ -147,12 +143,12 @@ class MAGCN(torch.nn.Module):
     
     def seq2feats(self, user_ids, log_seqs, time_seqs, time_seqs_nxt, time_matrices, dis_matrices, item_embs):
 
-        seqs = item_embs[torch.LongTensor(log_seqs).to(self.dev),:]  # (B, N, D)
-        # seqs *= item_embs.shape[1] ** 0.5  #* why?
+        seqs = item_embs[torch.LongTensor(log_seqs).to(self.dev),:]  
+        # seqs *= item_embs.shape[1] ** 0.5  # why?
         
         seqs = self.item_emb_dropout(seqs)
 
-        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1])  # (B, N)
+        positions = np.tile(np.array(range(log_seqs.shape[1])), [log_seqs.shape[0], 1]) 
         positions = torch.LongTensor(positions).to(self.dev)
         abs_pos_K = self.abs_pos_K_emb(positions)
         abs_pos_V = self.abs_pos_V_emb(positions)
@@ -179,7 +175,7 @@ class MAGCN(torch.nn.Module):
 
         for i in range(len(self.attention_layers)):
             Q = self.attention_layernorms[i](seqs)
-            mha_outputs = self.attention_layers[i](Q, seqs,  #* why do key==seqs rather than key==Q?
+            mha_outputs = self.attention_layers[i](Q, seqs,  # why do key==seqs rather than key==Q?
                                             timeline_mask, attention_mask,
                                             time_matrix_K, time_matrix_V,
                                             dis_matrix_K,dis_matrix_V,
@@ -189,9 +185,8 @@ class MAGCN(torch.nn.Module):
             seqs = self.forward_layers[i](seqs)
             seqs *=  ~timeline_mask.unsqueeze(-1)
 
-        if self.args.time_prompt:
-            seq_time = self.time_emb_dropout(self.time_emb(time_seqs_nxt.to(self.dev)))
-            seqs += seq_time  # add next time embedding
+        seq_time = self.time_emb_dropout(self.time_emb(time_seqs_nxt.to(self.dev)))
+        seqs += seq_time  # add next time embedding
         log_feats = self.last_layernorm(seqs)
 
         return log_feats
@@ -205,41 +200,29 @@ class MAGCN(torch.nn.Module):
         anchor_idx_dis = anchor_idx_dis.to(self.dev)
         self.anchor_idx_dis = anchor_idx_dis
         item_embs, item_embs_tem, item_embs_dis, support, support_tem, support_dis, class_tra, class_tem, class_dis = self.gcn(self.item_emb, anchor_idx, anchor_idx_tem, anchor_idx_dis)
+           
+        # intra-graph contrastive loss
+        pos_tra, neg_tra, anchor_tra = torch.split(class_tra, 1, dim=1)  
+        pos_tem, neg_tem, anchor_tem = torch.split(class_tem, 1, dim=1)  
+        pos_dis, neg_dis, anchor_dis = torch.split(class_dis, 1, dim=1)  
+        contra_loss_intra = self.separate_loss(pos_tra.squeeze(1), neg_tra.squeeze(1), anchor_tra.squeeze(1)) + \
+        self.separate_loss(pos_tem.squeeze(1), neg_tem.squeeze(1), anchor_tem.squeeze(1)) + self.separate_loss(pos_dis.squeeze(1), neg_dis.squeeze(1), anchor_dis.squeeze(1))
         
-        if class_tem is None or class_dis is None:  # don't need contrastive learning, set 0
-            contra_loss = torch.zeros(1).squeeze(0).to(self.dev)
-        else:     
-            # intra-graph contrastive loss
-            pos_tra, neg_tra, anchor_tra = torch.split(class_tra, 1, dim=1)  # (N, 1, D)
-            pos_tem, neg_tem, anchor_tem = torch.split(class_tem, 1, dim=1)  # (N, 1, D)
-            pos_dis, neg_dis, anchor_dis = torch.split(class_dis, 1, dim=1)  # (N, 1, D)
-            contra_loss_intra = self.separate_loss(pos_tra.squeeze(1), neg_tra.squeeze(1), anchor_tra.squeeze(1)) + \
-            self.separate_loss(pos_tem.squeeze(1), neg_tem.squeeze(1), anchor_tem.squeeze(1)) + self.separate_loss(pos_dis.squeeze(1), neg_dis.squeeze(1), anchor_dis.squeeze(1))
-            
-            # inter-graph contrastive loss
-            contra_loss_inter = self.separate_loss(pos_tem.squeeze(1), neg_tra.squeeze(1), anchor_tra.squeeze(1)) + \
-                self.separate_loss(pos_dis.squeeze(1), neg_tra.squeeze(1), anchor_tra.squeeze(1)) + \
-                self.separate_loss(pos_tra.squeeze(1), neg_tem.squeeze(1), anchor_tem.squeeze(1)) + \
-                self.separate_loss(pos_dis.squeeze(1), neg_tem.squeeze(1), anchor_tem.squeeze(1)) + \
-                self.separate_loss(pos_tra.squeeze(1), neg_dis.squeeze(1), anchor_dis.squeeze(1)) + \
-                self.separate_loss(pos_tem.squeeze(1), neg_dis.squeeze(1), anchor_dis.squeeze(1))
-            contra_loss = self.contra_intra * contra_loss_intra + self.contra_inter * contra_loss_inter
+        # inter-graph contrastive loss
+        contra_loss_inter = self.separate_loss(pos_tem.squeeze(1), neg_tra.squeeze(1), anchor_tra.squeeze(1)) + \
+            self.separate_loss(pos_dis.squeeze(1), neg_tra.squeeze(1), anchor_tra.squeeze(1)) + \
+            self.separate_loss(pos_tra.squeeze(1), neg_tem.squeeze(1), anchor_tem.squeeze(1)) + \
+            self.separate_loss(pos_dis.squeeze(1), neg_tem.squeeze(1), anchor_tem.squeeze(1)) + \
+            self.separate_loss(pos_tra.squeeze(1), neg_dis.squeeze(1), anchor_dis.squeeze(1)) + \
+            self.separate_loss(pos_tem.squeeze(1), neg_dis.squeeze(1), anchor_dis.squeeze(1))
+        contra_loss = self.contra_intra * contra_loss_intra + self.contra_inter * contra_loss_inter
         
         # fusion
-        if item_embs_tem is not None and item_embs_dis is not None:
-            item_embs_score, item_embs_tem_score, item_embs_dis_score = self.project(item_embs), self.project(item_embs_tem), self.project(item_embs_dis)  # (N, 1)
-            adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score, item_embs_dis_score], dim=-1)), dim=-1)
-            item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem, item_embs_dis], dim=1), dim=1)
-        elif item_embs_tem is not None:
-            item_embs_score, item_embs_tem_score = self.project(item_embs), self.project(item_embs_tem)  # (N, 1)
-            adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score], dim=-1)), dim=-1)
-            item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem], dim=1), dim=1)
-        elif item_embs_dis is not None:
-            item_embs_score, item_embs_dis_score = self.project(item_embs), self.project(item_embs_dis)  # (N, 1)
-            adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_dis_score], dim=-1)), dim=-1)
-            item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_dis], dim=1), dim=1)
+        item_embs_score, item_embs_tem_score, item_embs_dis_score = self.project(item_embs), self.project(item_embs_tem), self.project(item_embs_dis)  
+        adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score, item_embs_dis_score], dim=-1)), dim=-1)
+        item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem, item_embs_dis], dim=1), dim=1)
             
-        log_feats = self.seq2feats(user_ids, log_seqs, time_seqs, time_seqs_nxt, time_matrices, dis_matrices, item_embs)  # (B, N, D)
+        log_feats = self.seq2feats(user_ids, log_seqs, time_seqs, time_seqs_nxt, time_matrices, dis_matrices, item_embs)  
         pos_embs = item_embs[torch.LongTensor(pos_seqs).to(self.dev),:]  # label
         neg_embs = item_embs[torch.LongTensor(neg_seqs).to(self.dev),:]  # useless
 
@@ -247,37 +230,25 @@ class MAGCN(torch.nn.Module):
         neg_logits = (log_feats * neg_embs).sum(dim=-1)
 
         fin_logits = log_feats.matmul(item_embs.transpose(0,1))
-        #* spatial_preference
-        if self.args.dis_prompt:
-            bias = spatial_bias[torch.LongTensor(log_seqs), :].to(self.dev)  # (B, N, N_all)
-            fin_logits = fin_logits + bias
-        fin_logits = fin_logits.reshape(-1, fin_logits.shape[-1])  # (B*N, N_all)
+        # spatial_preference
+        bias = spatial_bias[torch.LongTensor(log_seqs), :].to(self.dev)  
+        fin_logits = fin_logits + bias
+        fin_logits = fin_logits.reshape(-1, fin_logits.shape[-1])  
         
         return pos_logits, neg_logits, fin_logits, support, support_tem, support_dis, contra_loss
 
     def predict(self, user_ids, log_seqs, time_seq, time_seq_nxt, time_matrices, dis_matrices, item_indices, spatial_bias):
         item_embs, item_embs_tem, item_embs_dis, support, support_tem, support_dis, class_tra, class_tem, class_dis = self.gcn(self.item_emb, self.anchor_idx, self.anchor_idx_tem, self.anchor_idx_dis)
-        #* fusion
         # fusion
-        if item_embs_tem is not None and item_embs_dis is not None:
-            item_embs_score, item_embs_tem_score, item_embs_dis_score = self.project(item_embs), self.project(item_embs_tem), self.project(item_embs_dis)  # (N, 1)
-            adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score, item_embs_dis_score], dim=-1)), dim=-1)
-            item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem, item_embs_dis], dim=1), dim=1)
-        elif item_embs_tem is not None:
-            item_embs_score, item_embs_tem_score = self.project(item_embs), self.project(item_embs_tem)  # (N, 1)
-            adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score], dim=-1)), dim=-1)
-            item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem], dim=1), dim=1)
-        elif item_embs_dis is not None:
-            item_embs_score, item_embs_dis_score = self.project(item_embs), self.project(item_embs_dis)  # (N, 1)
-            adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_dis_score], dim=-1)), dim=-1)
-            item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_dis], dim=1), dim=1)
+        item_embs_score, item_embs_tem_score, item_embs_dis_score = self.project(item_embs), self.project(item_embs_tem), self.project(item_embs_dis)  # (N, 1)
+        adaptive_score = torch.softmax(torch.exp(torch.cat([item_embs_score, item_embs_tem_score, item_embs_dis_score], dim=-1)), dim=-1)
+        item_embs = torch.sum(adaptive_score.unsqueeze(-1) * torch.stack([item_embs, item_embs_tem, item_embs_dis], dim=1), dim=1)
         
         log_feats = self.seq2feats(user_ids, log_seqs, time_seq, time_seq_nxt, time_matrices, dis_matrices, item_embs)
         final_feat = log_feats[:, -1, :]
         logits = final_feat.matmul(item_embs.transpose(0,1))
-        #* spatial_preference
-        if self.args.dis_prompt:
-            bias = spatial_bias[torch.LongTensor(log_seqs), :].to(self.dev)  # (B, N, N_all)
-            logits = logits + bias[:, -1, :]
+        # spatial_preference
+        bias = spatial_bias[torch.LongTensor(log_seqs), :].to(self.dev)  # (B, N, N_all)
+        logits = logits + bias[:, -1, :]
         
         return logits, item_indices

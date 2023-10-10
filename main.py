@@ -18,21 +18,6 @@ def str2bool(s):
         raise ValueError('Not a valid boolean string')
     return s == 'true'
 
-def select_anchor(kmeans, index, item_embs):
-    faiss_item_embs = item_embs[1:, ].clone().detach().cpu()
-    faiss_item_embs = faiss_item_embs.div(torch.norm(faiss_item_embs, p=2, dim=-1, keepdim=True)).numpy()
-    kmeans.train(faiss_item_embs)
-    index.add(faiss_item_embs)
-    D, I = index.search(kmeans.centroids, 1)  # find the top-1 nearest point in item_embs to the centroids to select r anchors
-    anchor_idx = torch.from_numpy(I).squeeze(-1)
-    return anchor_idx
-
-def sort_by_importance(mx):
-    '''Column-wise sum'''
-    colsum = -np.array(mx.sum(0))  # (N, )
-    index = np.argsort(colsum)
-    return index  # (r, )
-
 def setup_seed(seed=42):
     os.environ['PYTHONHASHSEED'] = str(seed)
     torch.manual_seed(seed)
@@ -40,37 +25,32 @@ def setup_seed(seed=42):
     torch.cuda.manual_seed_all(seed)
     np.random.seed(seed)
     random.seed(seed)
-    # torch.backends.cudnn.deterministic = True  # 确定性固定
-    # torch.backends.cudnn.benchmark = True  # False会确定性地选择算法，会降低性能
-    # torch.backends.cudnn.enabled = True   # 增加运行效率，默认就是True
 
 setup_seed(42)
 
 parser = argparse.ArgumentParser()
 # dataset
-parser.add_argument('--dataset', default='gowalla', choices=['gowalla', 'four-sin'], type=str, help="dataset name")
+parser.add_argument('--dataset', default='four-sin', choices=['gowalla', 'four-sin'], type=str, help="dataset name")
 # training
 parser.add_argument('--train_dir', default='default',type=str, help="log save directory")
 parser.add_argument('--batch_size', default=64, type=int, help="batch size")
 parser.add_argument('--lr', default=0.001, type=float, help="learning rate")
 parser.add_argument('--gpu', default=1, type=int, help="device")
 parser.add_argument("--same_anchor", type=eval, choices=[True, False], default='False', help="whether to use same anchor for temporal, spatial and frequency prior")
-parser.add_argument("--time_prompt", type=eval, choices=[True, False], default='True', help="whether to use time prompt")
-parser.add_argument("--dis_prompt", type=eval, choices=[True, False], default='True', help="whether to use spatial prompt")
 # model
 parser.add_argument('--maxlen', default=50, type=int, help="use recent maxlen subsequence to train model")
 parser.add_argument('--hidden_units', default=64, type=int, help="embedding dimension")
 parser.add_argument('--num_blocks', default=2, type=int, help="number of transformer layers")
-parser.add_argument('--num_epochs', default=50, type=int, help="number fo training epoch")  # 200  70
+parser.add_argument('--num_epochs', default=50, type=int, help="number fo training epoch")  
 parser.add_argument('--num_heads', default=1, type=int, help="head number of multi-head attention")
 parser.add_argument('--dropout_rate', default=0.2, type=float, help="drop rate")
 parser.add_argument('--l2_emb', default=0.001, type=float, help="L2 regularization")
 parser.add_argument('--inference_only', default=False, type=str2bool)
 parser.add_argument('--state_dict_path', default=None, type=str, help="model checkpoint")
-parser.add_argument('--time_span', default=128, type=int, help="maximal time interval threshold")  # 256
-parser.add_argument('--dis_span', default=256, type=int, help="maximal distance interval threshold")  # 256
+parser.add_argument('--time_span', default=128, type=int, help="maximal time interval threshold")  
+parser.add_argument('--dis_span', default=256, type=int, help="maximal distance interval threshold")  
 parser.add_argument('--anchor_num', default=500, type=int, help="number of anchor node")  
-parser.add_argument('--layer_num', default=3, type=int, help="number of GCN layers")  # foursquare: 3  gowalla: 2 but 3 is better
+parser.add_argument('--layer_num', default=3, type=int, help="number of GCN layers")
 parser.add_argument('--time_slot', default=168, type=int, help="segment time by 24 hours * 7 days")
 # loss 
 parser.add_argument('--tra_kl_reg', default=1.0, type=float, help="kl_reg of frequency transition prior")
@@ -104,8 +84,7 @@ def count_params(model):
     return param_count
 
 if __name__ == '__main__':
-    # tra_adj_matrix = sp.load_npz('data/sin_transaction_kl_notest.npz')  # csr_matrix
-    tra_adj_matrix = sp.load_npz('data/%s_transaction_kl_notest.npz' % args.dataset)  # N x N
+    tra_adj_matrix = sp.load_npz('data/%s_transaction_kl_notest.npz' % args.dataset) 
     
     # pre-trained temporal and spatial graph from Graph-Flashback
     if args.dataset == 'four-sin':
@@ -123,7 +102,6 @@ if __name__ == '__main__':
     time_adj_matrix = time_adj_matrix.todok()
     
     args.device = torch.device("cuda:{}".format(args.gpu)) if torch.cuda.is_available() else torch.device("cpu")
-    # args.device = torch.device("cpu")
 
     dataset = data_partition(args.dataset)
     [user_train, user_valid, user_test, usernum, itemnum, timenum] = dataset  # timenum is useless
@@ -139,7 +117,7 @@ if __name__ == '__main__':
     if not os.path.isdir(args.dataset + '_' + args.train_dir):
         os.makedirs(args.dataset + '_' + args.train_dir)
     timestring = time.strftime('%Y%m%d%H%M%S', time.localtime())
-    model_name = 'AGRAN'
+    model_name = 'MAGCL'
     save_dir = os.path.join(args.dataset + '_' + args.train_dir, f'{model_name}_{timestring}')
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
@@ -197,7 +175,7 @@ if __name__ == '__main__':
     parameters = [{'params': weight_decay_list},
                   {'params': no_decay_list, 'weight_decay': 0.}]
 
-    adam_optimizer = torch.optim.Adam(parameters, lr=args.lr, betas=(0.9, 0.98),weight_decay=args.l2_emb)  # 1e-3
+    adam_optimizer = torch.optim.Adam(parameters, lr=args.lr, betas=(0.9, 0.98),weight_decay=args.l2_emb) 
 
     T = 0.0
     t0 = time.time()
@@ -206,7 +184,7 @@ if __name__ == '__main__':
     param_count = count_params(model)
     f.write(f'In total: {param_count} trainable parameters.')
     
-    #* spatial_preference
+    # spatial_preference
     spatial_bias = torch.zeros(itemnum+1, itemnum+1)   
     spatial_bias[1:, 1:] = torch.tensor(dis_adj_matrix.A) 
     diag = torch.eye(itemnum+1, dtype=torch.float32)  
@@ -245,14 +223,9 @@ if __name__ == '__main__':
             u, seq, time_seq, time_seq_nxt, pos, neg, time_matrix, dis_matrix = instance
             pos_logits, neg_logits, fin_logits, support, support_tem, support_dis, contra_loss = model(u, seq, time_seq, time_seq_nxt, time_matrix, dis_matrix, pos, neg, anchor_idx, anchor_idx_tem, anchor_idx_dis, spatial_bias)
             tra_regular = kl_loss(torch.log(torch.softmax(mask(support.transpose(1,0)), dim=-1) + 1e-9), torch.softmax(mask(tra_prior), dim=-1))
-            if args.time_kl_reg > 0:
-                time_regular = kl_loss(torch.log(torch.softmax(mask(support_tem.transpose(1,0)), dim=-1) + 1e-9), torch.softmax(mask(time_prior), dim=-1))
-            else:
-                time_regular = torch.zeros(1).squeeze(0).to(args.device)
-            if args.dis_kl_reg > 0:
-                dis_regular = kl_loss(torch.log(torch.softmax(mask(support_dis.transpose(1,0)), dim=-1) + 1e-9), torch.softmax(mask(dis_prior), dim=-1))
-            else:
-                dis_regular = torch.zeros(1).squeeze(0).to(args.device)
+            time_regular = kl_loss(torch.log(torch.softmax(mask(support_tem.transpose(1,0)), dim=-1) + 1e-9), torch.softmax(mask(time_prior), dim=-1))
+            dis_regular = kl_loss(torch.log(torch.softmax(mask(support_dis.transpose(1,0)), dim=-1) + 1e-9), torch.softmax(mask(dis_prior), dim=-1))
+            
             adam_optimizer.zero_grad()
             pos_label_for_crosse = pos.numpy().reshape(-1)
             indices_for_crosse = np.where(pos_label_for_crosse!=0)[0]
