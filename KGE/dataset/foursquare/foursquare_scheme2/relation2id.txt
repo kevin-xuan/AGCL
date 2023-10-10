@@ -1,3 +1,0 @@
-interact 0
-temporal 1
-spatial 2
