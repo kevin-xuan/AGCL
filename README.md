@@ -1,6 +1,7 @@
 # AGCL
 
-This is the implementation for the paper: “Adaptive Graph Contrastive Learning for Next Point-of-Interest Recommendation.” 
+This is the implementation for the paper: “Next Point-of-Interest Recommendation with
+Adaptive Graph Contrastive Learning.” 
 
 ## Preliminaries
 
