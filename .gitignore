@@ -5,6 +5,6 @@ KGE/POI_graph/gowalla_scheme2_transe_loc_spatial_100.pkl
 KGE/POI_graph/gowalla_scheme2_transe_loc_temporal_100.pkl
 four-sin_default
 gowalla_default
-visualization
+visualizations
 scripts/ablation.sh
 scripts/parameter.sh
