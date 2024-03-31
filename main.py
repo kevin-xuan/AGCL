@@ -41,7 +41,7 @@ parser.add_argument("--same_anchor", type=eval, choices=[True, False], default='
 parser.add_argument('--maxlen', default=50, type=int, help="use recent maxlen subsequence to train model")
 parser.add_argument('--hidden_units', default=64, type=int, help="embedding dimension")
 parser.add_argument('--num_blocks', default=2, type=int, help="number of transformer layers")
-parser.add_argument('--num_epochs', default=50, type=int, help="number fo training epoch")  
+parser.add_argument('--num_epochs', default=60, type=int, help="number fo training epoch")  
 parser.add_argument('--num_heads', default=1, type=int, help="head number of multi-head attention")
 parser.add_argument('--dropout_rate', default=0.2, type=float, help="drop rate")
 parser.add_argument('--l2_emb', default=0.001, type=float, help="L2 regularization")
@@ -97,6 +97,22 @@ if __name__ == '__main__':
             dis_adj_matrix = pickle.load(f)  
         with open('KGE/POI_graph/gowalla_scheme2_transe_loc_temporal_100.pkl', 'rb') as f:  
             time_adj_matrix = pickle.load(f)  
+    elif args.dataset == 'four-NYC':
+        with open('KGE/POI_graph/nyc_scheme2_transe_loc_spatial_10.pkl', 'rb') as f:  
+            dis_adj_matrix = pickle.load(f)  
+        with open('KGE/POI_graph/nyc_scheme2_transe_loc_temporal_10.pkl', 'rb') as f:  
+            time_adj_matrix = pickle.load(f)  
+    elif args.dataset == 'four-TKY':
+        with open('KGE/POI_graph/tky_scheme2_transe_loc_spatial_10.pkl', 'rb') as f:  
+            dis_adj_matrix = pickle.load(f)  
+        with open('KGE/POI_graph/tky_scheme2_transe_loc_temporal_10.pkl', 'rb') as f:  
+            time_adj_matrix = pickle.load(f)  
+            
+    elif args.dataset == 'gowalla':
+        with open('KGE/POI_graph/gowalla_scheme2_transe_loc_spatial_100.pkl', 'rb') as f:  
+            dis_adj_matrix = pickle.load(f)  
+        with open('KGE/POI_graph/gowalla_scheme2_transe_loc_temporal_100.pkl', 'rb') as f:  
+            time_adj_matrix = pickle.load(f)  
     tra_adj_matrix = tra_adj_matrix.todok()
     dis_adj_matrix = dis_adj_matrix.todok()
     time_adj_matrix = time_adj_matrix.todok()
@@ -104,7 +120,7 @@ if __name__ == '__main__':
     args.device = torch.device("cuda:{}".format(args.gpu)) if torch.cuda.is_available() else torch.device("cpu")
 
     dataset = data_partition(args.dataset)
-    [user_train, user_valid, user_test, usernum, itemnum, timenum] = dataset  # timenum is useless
+    [user_train, user_valid, user_test, usernum, itemnum, timenum, user_interval_map, item_interval_map] = dataset  # timenum is useless
     num_batch = len(user_train) // args.batch_size
     cc = 0.0
     for u in user_train:
@@ -259,12 +275,66 @@ if __name__ == '__main__':
             #       % (epoch, T, HR[0], HR[1], HR[2], NDCG[0], NDCG[1], NDCG[2]))
             
             ### for test ###
-            NDCG, HR = evaluate_test(model, dataset, args, spatial_bias)
+            NDCG, HR, NDCG_user_0, HR_user_0, NDCG_user_1, HR_user_1, NDCG_user_2, HR_user_2, NDCG_user_3, HR_user_3, NDCG_user_4, HR_user_4, NDCG_item_0, HR_item_0, NDCG_item_1, HR_item_1, NDCG_item_2, HR_item_2, NDCG_item_3, HR_item_3, NDCG_item_4, HR_item_4 = evaluate_test(model, dataset, args, spatial_bias)
             print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
                   % (epoch, T, HR[0], HR[1], HR[2], NDCG[0], NDCG[1], NDCG[2]))
             f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
                   % (epoch, T, HR[0], HR[1], HR[2], NDCG[0], NDCG[1], NDCG[2]))
 
+            # print('\n------------User Group-------------------')
+            # f.write('\n------------User Group-------------------')
+            # print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, HR_user_0[0], HR_user_0[1], HR_user_0[2], NDCG_user_0[0], NDCG_user_0[1], NDCG_user_0[2]))
+            # f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+            #       % (epoch, T, HR_user_0[0], HR_user_0[1], HR_user_0[2], NDCG_user_0[0], NDCG_user_0[1], NDCG_user_0[2]))
+            
+            # print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, HR_user_1[0], HR_user_1[1], HR_user_1[2], NDCG_user_1[0], NDCG_user_1[1], NDCG_user_1[2]))
+            # f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+            #       % (epoch, T, HR_user_1[0], HR_user_1[1], HR_user_1[2], NDCG_user_1[0], NDCG_user_1[1], NDCG_user_1[2]))
+            
+            # print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, HR_user_2[0], HR_user_2[1], HR_user_2[2], NDCG_user_2[0], NDCG_user_2[1], NDCG_user_2[2]))
+            # f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+            #       % (epoch, T, HR_user_2[0], HR_user_2[1], HR_user_2[2], NDCG_user_2[0], NDCG_user_2[1], NDCG_user_2[2]))
+            
+            # print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, HR_user_3[0], HR_user_3[1], HR_user_3[2], NDCG_user_3[0], NDCG_user_3[1], NDCG_user_3[2]))
+            # f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+            #       % (epoch, T, HR_user_3[0], HR_user_3[1], HR_user_3[2], NDCG_user_3[0], NDCG_user_3[1], NDCG_user_3[2]))
+            
+            # print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, HR_user_4[0], HR_user_4[1], HR_user_4[2], NDCG_user_4[0], NDCG_user_4[1], NDCG_user_4[2]))
+            # f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+            #       % (epoch, T, HR_user_4[0], HR_user_4[1], HR_user_4[2], NDCG_user_4[0], NDCG_user_4[1], NDCG_user_4[2]))
+            
+            # print('\n------------Item Group-------------------')
+            # f.write('\n------------Item Group-------------------')
+            # print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, HR_item_0[0], HR_item_0[1], HR_item_0[2], NDCG_item_0[0], NDCG_item_0[1], NDCG_item_0[2]))
+            # f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+            #       % (epoch, T, HR_item_0[0], HR_item_0[1], HR_item_0[2], NDCG_item_0[0], NDCG_item_0[1], NDCG_item_0[2]))
+            
+            # print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, HR_item_1[0], HR_item_1[1], HR_item_1[2], NDCG_item_1[0], NDCG_item_1[1], NDCG_item_1[2]))
+            # f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+            #       % (epoch, T, HR_item_1[0], HR_item_1[1], HR_item_1[2], NDCG_item_1[0], NDCG_item_1[1], NDCG_item_1[2]))
+            
+            # print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, HR_item_2[0], HR_item_2[1], HR_item_2[2], NDCG_item_2[0], NDCG_item_2[1], NDCG_item_2[2]))
+            # f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+            #       % (epoch, T, HR_item_2[0], HR_item_2[1], HR_item_2[2], NDCG_item_2[0], NDCG_item_2[1], NDCG_item_2[2]))
+            
+            # print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, HR_item_3[0], HR_item_3[1], HR_item_3[2], NDCG_item_3[0], NDCG_item_3[1], NDCG_item_3[2]))
+            # f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+            #       % (epoch, T, HR_item_3[0], HR_item_3[1], HR_item_3[2], NDCG_item_3[0], NDCG_item_3[1], NDCG_item_3[2]))
+            
+            # print('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)'
+            #       % (epoch, T, HR_item_4[0], HR_item_4[1], HR_item_4[2], NDCG_item_4[0], NDCG_item_4[1], NDCG_item_4[2]))
+            # f.write('\nTest epoch:%d, time: %f(s), Recall (@2: %.4f, @5: %.4f, @10: %.4f), NDCG (@2: %.4f, @5: %.4f, @10: %.4f)\n'
+            #       % (epoch, T, HR_item_4[0], HR_item_4[1], HR_item_4[2], NDCG_item_4[0], NDCG_item_4[1], NDCG_item_4[2]))
+            
             f.flush()
             t0 = time.time()
             model.train()

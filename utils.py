@@ -154,6 +154,40 @@ def data_partition(fname):
         item_count[i]+=1
     f.close()
     f = open('data/%s.txt' % fname, 'r')
+    
+    user_interval = [50, 100, 150, 200, len(user_count)]
+    item_interval = [20, 35, 50, 65, len(item_count)]
+    user_interval_count = defaultdict(int)
+    user_interval_map = defaultdict(int)
+    item_interval_count = defaultdict(int)
+    item_interval_map = defaultdict(int)
+    user_flag = False
+    item_flag = False
+    for key, value in user_count.items():
+        for ind, thr in enumerate(user_interval[:-1]):
+            if value <= thr:
+                user_interval_count[thr] += 1
+                user_interval_map[key] = ind
+                user_flag = True
+                break
+        if not user_flag:
+            user_interval_count[user_interval[-1]] += 1
+            user_interval_map[key] = len(user_interval) - 1
+        else:
+            user_flag = False
+        
+    for key, value in item_count.items():
+        for thr in item_interval[:-1]:
+            if value <= thr:
+                item_interval_count[thr] += 1
+                item_interval_map[key] = ind
+                item_flag = True
+                break
+        if not item_flag:
+            item_interval_count[item_interval[-1]] += 1
+            item_interval_map[key] = len(item_interval) - 1
+        else:
+            item_flag = False
 
     for line in f:
         try:
@@ -185,7 +219,7 @@ def data_partition(fname):
             user_test[user] = []
             user_test[user].append(User[user][-1])
     print('Preparing done...')
-    return [user_train, user_valid, user_test, usernum, itemnum, timenum]
+    return [user_train, user_valid, user_test, usernum, itemnum, timenum, user_interval_map, item_interval_map]
 
 def generate_vaild(dataset,args):
     [train, valid, test, usernum, itemnum, timenum] = copy.deepcopy(dataset)
@@ -304,7 +338,7 @@ def evaluate_vaild(model, dataset, args, spatial_bias):
     return [x/vaild_user_num for x in NDCG], [x/vaild_user_num for x in HT]
 
 def generate_test(dataset, args):
-    [train, valid, test, usernum, itemnum, timenum] = copy.deepcopy(dataset)
+    [train, valid, test, usernum, itemnum, timenum, user_interval_map, item_interval_map] = copy.deepcopy(dataset)
     users = range(1, usernum + 1)
     all_test_user = []
     all_test_seq = []
@@ -368,9 +402,40 @@ def generate_test(dataset, args):
 
 
 def evaluate_test(model, dataset, args, spatial_bias):
-    NDCG = [0.0, 0.0, 0.0]
+    [train, valid, test, usernum, itemnum, timenum, user_interval_map, item_interval_map] = copy.deepcopy(dataset)
+    NDCG = [0.0,0.0,0.0]
+    NDCG_user_0 = [0.0,0.0,0.0]
+    NDCG_user_1 = [0.0,0.0,0.0]
+    NDCG_user_2 = [0.0,0.0,0.0]
+    NDCG_user_3 = [0.0,0.0,0.0]
+    NDCG_user_4 = [0.0,0.0,0.0]
+    NDCG_item_0 = [0.0,0.0,0.0]
+    NDCG_item_1 = [0.0,0.0,0.0]
+    NDCG_item_2 = [0.0,0.0,0.0]
+    NDCG_item_3 = [0.0,0.0,0.0]
+    NDCG_item_4 = [0.0,0.0,0.0]
     test_user_num = 0.0
+    test_user_0_num = 0.0
+    test_user_1_num = 0.0
+    test_user_2_num = 0.0
+    test_user_3_num = 0.0
+    test_user_4_num = 0.0
+    test_item_0_num = 0.0
+    test_item_1_num = 0.0
+    test_item_2_num = 0.0
+    test_item_3_num = 0.0
+    test_item_4_num = 0.0
     HT = [0.0,0.0,0.0]
+    HT_user_0 = [0.0,0.0,0.0]
+    HT_user_1 = [0.0,0.0,0.0]
+    HT_user_2 = [0.0,0.0,0.0]
+    HT_user_3 = [0.0,0.0,0.0]
+    HT_user_4 = [0.0,0.0,0.0]
+    HT_item_0 = [0.0,0.0,0.0]
+    HT_item_1 = [0.0,0.0,0.0]
+    HT_item_2 = [0.0,0.0,0.0]
+    HT_item_3 = [0.0,0.0,0.0]
+    HT_item_4 = [0.0,0.0,0.0]
     try:
         with open(f"data/{args.dataset}_" + "%s_%s_test_instance.pkl" % (args.time_span, args.dis_span), 'rb') as f:
             all_u = pickle.load(f)
@@ -408,15 +473,128 @@ def evaluate_test(model, dataset, args, spatial_bias):
         for i in range(len(ranks)):
             rank.append(ranks[i,label[i]])
         test_user_num += len(rank)
-        for i in rank:
-            if i < 2:
-                NDCG[0] += 1 / np.log2(i + 2)
+        user_group = list(map(lambda x: user_interval_map[x.item()+1], u))  # start from 1
+        test_user_0_num += (np.array(user_group) == 0).sum()
+        test_user_1_num += (np.array(user_group) == 1).sum()
+        test_user_2_num += (np.array(user_group) == 2).sum()
+        test_user_3_num += (np.array(user_group) == 3).sum()
+        test_user_4_num += (np.array(user_group) == 4).sum()
+        item_group = list(map(lambda x: item_interval_map[x.item()], label))
+        test_item_0_num += (np.array(item_group) == 0).sum()
+        test_item_1_num += (np.array(item_group) == 1).sum()
+        test_item_2_num += (np.array(item_group) == 2).sum()
+        test_item_3_num += (np.array(item_group) == 3).sum()
+        test_item_4_num += (np.array(item_group) == 4).sum()
+        for i, v in enumerate(rank):
+            if v < 2:
+                NDCG[0] += 1 / np.log2(v + 2)
                 HT[0] += 1
-            if i < 5:
-                NDCG[1] += 1 / np.log2(i + 2)
+                # user group
+                if user_group[i] == 0:
+                    NDCG_user_0[0] += 1 / np.log2(v + 2)
+                    HT_user_0[0] += 1
+                elif user_group[i] == 1:
+                    NDCG_user_1[0] += 1 / np.log2(v + 2)
+                    HT_user_1[0] += 1
+                elif user_group[i] == 2:
+                    NDCG_user_2[0] += 1 / np.log2(v + 2)
+                    HT_user_2[0] += 1
+                elif user_group[i] == 3:
+                    NDCG_user_3[0] += 1 / np.log2(v + 2)
+                    HT_user_3[0] += 1
+                else:
+                    NDCG_user_4[0] += 1 / np.log2(v + 2)
+                    HT_user_4[0] += 1
+                
+                # item group
+                if item_group[i] == 0:
+                    NDCG_item_0[0] += 1 / np.log2(v + 2)
+                    HT_item_0[0] += 1
+                elif item_group[i] == 1:
+                    NDCG_item_1[0] += 1 / np.log2(v + 2)
+                    HT_item_1[0] += 1
+                elif item_group[i] == 2:
+                    NDCG_item_2[0] += 1 / np.log2(v + 2)
+                    HT_item_2[0] += 1
+                elif item_group[i] == 3:
+                    NDCG_item_3[0] += 1 / np.log2(v + 2)
+                    HT_item_3[0] += 1
+                else:
+                    NDCG_item_4[0] += 1 / np.log2(v + 2)
+                    HT_item_4[0] += 1
+                
+            if v < 5:
+                NDCG[1] += 1 / np.log2(v + 2)
                 HT[1] += 1
-            if i < 10:
-                NDCG[2] += 1 / np.log2(i + 2)
+                # user group
+                if user_group[i] == 0:
+                    NDCG_user_0[1] += 1 / np.log2(v + 2)
+                    HT_user_0[1] += 1
+                elif user_group[i] == 1:
+                    NDCG_user_1[1] += 1 / np.log2(v + 2)
+                    HT_user_1[1] += 1
+                elif user_group[i] == 2:
+                    NDCG_user_2[1] += 1 / np.log2(v + 2)
+                    HT_user_2[1] += 1
+                elif user_group[i] == 3:
+                    NDCG_user_3[1] += 1 / np.log2(v + 2)
+                    HT_user_3[1] += 1
+                else:
+                    NDCG_user_4[1] += 1 / np.log2(v + 2)
+                    HT_user_4[1] += 1
+                
+                # item group
+                if item_group[i] == 0:
+                    NDCG_item_0[0] += 1 / np.log2(v + 2)
+                    HT_item_0[0] += 1
+                elif item_group[i] == 1:
+                    NDCG_item_1[0] += 1 / np.log2(v + 2)
+                    HT_item_1[0] += 1
+                elif item_group[i] == 2:
+                    NDCG_item_2[0] += 1 / np.log2(v + 2)
+                    HT_item_2[0] += 1
+                elif item_group[i] == 3:
+                    NDCG_item_3[0] += 1 / np.log2(v + 2)
+                    HT_item_3[0] += 1
+                else:
+                    NDCG_item_4[0] += 1 / np.log2(v + 2)
+                    HT_item_4[0] += 1
+                    
+            if v < 10:
+                NDCG[2] += 1 / np.log2(v + 2)
                 HT[2] += 1
+                # user group
+                if user_group[i] == 0:
+                    NDCG_user_0[2] += 1 / np.log2(v + 2)
+                    HT_user_0[2] += 1
+                elif user_group[i] == 1:
+                    NDCG_user_1[2] += 1 / np.log2(v + 2)
+                    HT_user_1[2] += 1
+                elif user_group[i] == 2:
+                    NDCG_user_2[2] += 1 / np.log2(v + 2)
+                    HT_user_2[2] += 1
+                elif user_group[i] == 3:
+                    NDCG_user_3[2] += 1 / np.log2(v + 2)
+                    HT_user_3[2] += 1
+                else:
+                    NDCG_user_4[2] += 1 / np.log2(v + 2)
+                    HT_user_4[2] += 1
+                
+                # item group
+                if item_group[i] == 0:
+                    NDCG_item_0[0] += 1 / np.log2(v + 2)
+                    HT_item_0[0] += 1
+                elif item_group[i] == 1:
+                    NDCG_item_1[0] += 1 / np.log2(v + 2)
+                    HT_item_1[0] += 1
+                elif item_group[i] == 2:
+                    NDCG_item_2[0] += 1 / np.log2(v + 2)
+                    HT_item_2[0] += 1
+                elif item_group[i] == 3:
+                    NDCG_item_3[0] += 1 / np.log2(v + 2)
+                    HT_item_3[0] += 1
+                else:
+                    NDCG_item_4[0] += 1 / np.log2(v + 2)
+                    HT_item_4[0] += 1
 
-    return [x/test_user_num for x in NDCG], [x/test_user_num for x in HT]
+    return [x/test_user_num for x in NDCG], [x/test_user_num for x in HT], [x/test_user_0_num for x in NDCG_user_0], [x/test_user_0_num for x in HT_user_0], [x/test_user_1_num for x in NDCG_user_1], [x/test_user_1_num for x in HT_user_1], [x/test_user_2_num for x in NDCG_user_2], [x/test_user_2_num for x in HT_user_2], [x/test_user_3_num for x in NDCG_user_3], [x/test_user_3_num for x in HT_user_3], [x/test_user_4_num for x in NDCG_user_4], [x/test_user_4_num for x in HT_user_4], [x/test_item_0_num for x in NDCG_item_0], [x/test_item_0_num for x in HT_item_0], [x/test_item_1_num for x in NDCG_item_1], [x/test_item_1_num for x in HT_item_1], [x/test_item_2_num for x in NDCG_item_2], [x/test_item_2_num for x in HT_item_2], [x/test_item_3_num for x in NDCG_item_3], [x/test_item_3_num for x in HT_item_3], [x/test_item_4_num for x in NDCG_item_4], [x/test_item_4_num for x in HT_item_4]
