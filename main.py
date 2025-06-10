@@ -120,7 +120,7 @@ if __name__ == '__main__':
     args.device = torch.device("cuda:{}".format(args.gpu)) if torch.cuda.is_available() else torch.device("cpu")
 
     dataset = data_partition(args.dataset)
-    [user_train, user_valid, user_test, usernum, itemnum, timenum, user_interval_map, item_interval_map] = dataset  # timenum is useless
+    [user_train, user_valid, user_test, usernum, itemnum, timenum, user_interval_map, item_interval_map] = dataset  
     num_batch = len(user_train) // args.batch_size
     cc = 0.0
     for u in user_train:
